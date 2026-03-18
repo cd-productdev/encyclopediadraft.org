@@ -26,9 +26,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Public article show route (no authentication required)
-Route::get('/articles/{article}', [ArticleWebController::class, 'show'])->name('articles.show');
-
 // Article routes (for authenticated users)
 Route::middleware('auth')->group(function () {
     Route::get('/articles', [ArticleWebController::class, 'index'])->name('articles.index');
@@ -46,6 +43,9 @@ Route::middleware('auth')->group(function () {
     // Image upload for CKEditor
     Route::post('/articles/upload-image', [ArticleWebController::class, 'uploadImage'])->name('articles.upload-image');
 });
+
+// Public article show route (no authentication required) - MUST be after other article routes
+Route::get('/articles/{article}', [ArticleWebController::class, 'show'])->name('articles.show');
 
 // Admin routes
 Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {

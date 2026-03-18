@@ -221,7 +221,8 @@
             ImageStyle,
             ImageUpload,
             FileRepository,
-            HorizontalLine
+            HorizontalLine,
+            Alignment
         } from 'ckeditor5';
 
         const csrfToken = '{{ csrf_token() }}';
@@ -270,7 +271,7 @@
                     Essentials, Bold, Italic, Underline, Strikethrough, Font, Paragraph, 
                     Heading, List, Link, BlockQuote, Table, TableToolbar, MediaEmbed, 
                     Image, ImageToolbar, ImageCaption, ImageStyle, ImageUpload, 
-                    FileRepository, HorizontalLine, UploadAdapterPlugin
+                    FileRepository, HorizontalLine, Alignment, UploadAdapterPlugin
                 ],
                 toolbar: {
                     items: [
@@ -278,11 +279,15 @@
                         'heading', '|',
                         'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
                         'bold', 'italic', 'underline', 'strikethrough', '|',
+                        'alignment', '|',
                         'link', 'uploadImage', 'mediaEmbed', 'blockQuote', 'horizontalLine', '|',
                         'bulletedList', 'numberedList', '|',
                         'insertTable'
                     ],
                     shouldNotGroupWhenFull: true
+                },
+                alignment: {
+                    options: ['left', 'center', 'right', 'justify']
                 },
                 heading: {
                     options: [

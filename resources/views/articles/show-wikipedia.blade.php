@@ -69,6 +69,76 @@
         .reference-item .anchor:hover {
             text-decoration: underline;
         }
+
+        /* CKEditor Image Alignment Support */
+        .desc img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Image floating for text wrapping */
+        .desc .image-style-side,
+        .desc img[style*="float: right"],
+        .desc figure[style*="float: right"] {
+            float: right;
+            margin: 0 0 1em 1em;
+            max-width: 50%;
+        }
+        
+        .desc img[style*="float: left"],
+        .desc figure[style*="float: left"] {
+            float: left;
+            margin: 0 1em 1em 0;
+            max-width: 50%;
+        }
+        
+        /* Block images (centered) */
+        .desc .image-style-block,
+        .desc figure.image {
+            display: block;
+            margin: 1em auto;
+            text-align: center;
+        }
+        
+        /* Inline images */
+        .desc .image-style-inline {
+            display: inline-block;
+            margin: 0 0.5em;
+            max-width: 100%;
+        }
+        
+        /* Figure captions */
+        .desc figure figcaption {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+            margin-top: 0.5em;
+            text-align: center;
+        }
+        
+        /* Clear floats after content */
+        .desc::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        
+        /* Text alignment support */
+        .desc .text-align-left {
+            text-align: left;
+        }
+        
+        .desc .text-align-center {
+            text-align: center;
+        }
+        
+        .desc .text-align-right {
+            text-align: right;
+        }
+        
+        .desc .text-align-justify {
+            text-align: justify;
+        }
     </style>
 </head>
 <body>
