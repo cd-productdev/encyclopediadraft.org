@@ -41,16 +41,17 @@ class Article extends Model
 
         static::creating(function ($article) {
             if (empty($article->slug)) {
-                // Generate unique base64-encoded slug
-                $randomString = uniqid($article->title, true);
-                $article->slug = rtrim(base64_encode($randomString), '=');
+                // Generate short unique base64-encoded slug (similar to MjcxMw==)
+                // Use article ID if available, otherwise use random number + timestamp
+                $uniqueNumber = time() . mt_rand(1000, 9999);
+                $article->slug = rtrim(base64_encode($uniqueNumber), '=');
             }
         });
 
         static::updating(function ($article) {
             if ($article->isDirty('title') && empty($article->slug)) {
-                $randomString = uniqid($article->title, true);
-                $article->slug = rtrim(base64_encode($randomString), '=');
+                $uniqueNumber = time() . mt_rand(1000, 9999);
+                $article->slug = rtrim(base64_encode($uniqueNumber), '=');
             }
         });
     }

@@ -13,7 +13,7 @@ Route::get('/', function () {
 
 // Dashboard route - redirect to articles for regular users
 Route::get('/dashboard', function () {
-    if (auth()->user()?->role === 'admin') {
+    if (in_array(auth()->user()?->role, ['admin', 'moderator'])) {
         return redirect()->route('admin.dashboard');
     }
     return redirect()->route('articles.index');
@@ -39,6 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/articles/{article}/edit', [ArticleWebController::class, 'edit'])->name('articles.edit');
     Route::put('/articles/{article}', [ArticleWebController::class, 'update'])->name('articles.update');
     Route::delete('/articles/{article}', [ArticleWebController::class, 'destroy'])->name('articles.destroy');
+    
+    // Preview route
+    Route::post('/articles/preview', [ArticleWebController::class, 'preview'])->name('articles.preview');
     
     // Image upload for CKEditor
     Route::post('/articles/upload-image', [ArticleWebController::class, 'uploadImage'])->name('articles.upload-image');

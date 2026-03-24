@@ -4,6 +4,21 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Edit Article') }}
             </h2>
+            @if(in_array(auth()->user()->role, ['admin', 'moderator']))
+                <a href="{{ route('admin.articles.index') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back
+                </a>
+            @else
+                <a href="{{ route('articles.index') }}" class="inline-flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back
+                </a>
+            @endif
         </div>
     </x-slot>
 
@@ -45,7 +60,7 @@
                                 <!-- Summary -->
                                 <div>
                                     <label for="summary" class="block text-sm font-medium text-gray-700 mb-2">Summary</label>
-                                    <textarea name="summary" id="summary" rows="3" 
+                                    <textarea name="summary" id="summary" rows="3"
                                         placeholder="Brief description of the article..."
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('summary', $article->summary) }}</textarea>
                                 </div>
@@ -58,6 +73,15 @@
                                         <option value="draft" {{ old('status', $article->status) === 'draft' ? 'selected' : '' }}>Save as Draft</option>
                                         <option value="pending" {{ old('status', $article->status) === 'pending' ? 'selected' : '' }}>Submit for Review</option>
                                     </select>
+                                </div>
+
+                                <!-- Draft Reason (visible when status is draft) -->
+                                <div id="draftReasonField" style="display: none;">
+                                    <label for="draft_reason" class="block text-sm font-medium text-gray-700 mb-2">Draft Reason</label>
+                                    <textarea name="draft_reason" id="draft_reason" rows="3" 
+                                        placeholder="Explain why this article is in draft status (e.g., incomplete research, needs peer review, awaiting sources...)"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('draft_reason', $article->draft_reason) }}</textarea>
+                                    <p class="text-xs text-gray-500 mt-1">This will be displayed in the article's warning box.</p>
                                 </div>
 
                                 <!-- References -->
@@ -106,11 +130,11 @@
                             <div class="lg:col-span-1 space-y-6">
                                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 sticky top-6">
                                     <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-300">Article Infobox</h3>
-                                    
+
                                     <!-- Infobox Image -->
                                     <div class="mb-4">
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Image</label>
-                                        
+
                                         @if($article->infobox_image)
                                             <div class="mb-2">
                                                 <img src="{{ Storage::url($article->infobox_image) }}" alt="Current image" class="w-full h-auto rounded-lg mb-2">
@@ -120,11 +144,11 @@
                                                 </label>
                                             </div>
                                         @endif
-                                        
+
                                         <!-- Custom Image Upload Area -->
                                         <div class="image-upload-wrapper">
                                             <input type="file" name="infobox_image" id="infobox_image" accept="image/*" class="hidden">
-                                            
+
                                             <div id="imageUploadArea" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 transition-colors bg-white">
                                                 <div id="imagePreviewContainer" class="hidden">
                                                     <img id="imagePreview" src="" alt="Preview" class="w-full h-auto rounded-lg mb-2">
@@ -132,7 +156,7 @@
                                                         × Remove Image
                                                     </button>
                                                 </div>
-                                                
+
                                                 <div id="uploadPrompt">
                                                     <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -198,6 +222,13 @@
                             <a href="{{ route('articles.index') }}" class="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
                                 Cancel
                             </a>
+                            <button type="button" onclick="previewArticle()" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-purple-700 flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                Preview
+                            </button>
                             <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                                 Save Article
                             </button>
@@ -287,9 +318,9 @@
         ClassicEditor
             .create(document.querySelector('#content'), {
                 plugins: [
-                    Essentials, Bold, Italic, Underline, Strikethrough, Font, Paragraph, 
-                    Heading, List, Link, BlockQuote, Table, TableToolbar, MediaEmbed, 
-                    Image, ImageToolbar, ImageCaption, ImageStyle, ImageUpload, 
+                    Essentials, Bold, Italic, Underline, Strikethrough, Font, Paragraph,
+                    Heading, List, Link, BlockQuote, Table, TableToolbar, MediaEmbed,
+                    Image, ImageToolbar, ImageCaption, ImageStyle, ImageUpload,
                     FileRepository, HorizontalLine, Alignment, UploadAdapterPlugin
                 ],
                 toolbar: {
@@ -346,7 +377,7 @@
                 alert('Editor is not initialized yet. Please wait a moment.');
                 return false;
             }
-            
+
             const content = editor.getData().trim();
             if (!content) {
                 e.preventDefault();
@@ -389,6 +420,22 @@
             container.appendChild(newField);
         });
 
+        // Toggle Draft Reason field based on status
+        const statusSelect = document.getElementById('status');
+        const draftReasonField = document.getElementById('draftReasonField');
+        
+        function toggleDraftReason() {
+            if (statusSelect.value === 'draft') {
+                draftReasonField.style.display = 'block';
+            } else {
+                draftReasonField.style.display = 'none';
+            }
+        }
+        
+        statusSelect.addEventListener('change', toggleDraftReason);
+        // Initialize on page load
+        toggleDraftReason();
+
         // Image Upload Functionality
         const imageInput = document.getElementById('infobox_image');
         const uploadArea = document.getElementById('imageUploadArea');
@@ -423,14 +470,14 @@
         uploadArea.addEventListener('drop', function(e) {
             e.preventDefault();
             uploadArea.classList.remove('border-blue-500', 'bg-blue-50');
-            
+
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('image/')) {
                 // Set the file to the input
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 imageInput.files = dataTransfer.files;
-                
+
                 handleImageFile(file);
             }
         });
@@ -461,10 +508,132 @@
                 reader.readAsDataURL(file);
             }
         }
+
+        // Preview Article Function
+        window.previewArticle = function() {
+            if (!editor) {
+                alert('Editor is still loading. Please wait a moment and try again.');
+                return;
+            }
+
+            var title = document.querySelector('#title').value;
+            var content = editor.getData();
+            var summary = document.querySelector('#summary').value;
+
+            if (!title) {
+                alert('Please enter an article title');
+                return;
+            }
+
+            if (!content) {
+                alert('Please enter article content');
+                return;
+            }
+
+            var infoFields = [];
+            document.querySelectorAll('.info-field-group').forEach(function(group) {
+                var key = group.querySelector('input[name*="[key]"]');
+                var value = group.querySelector('input[name*="[value]"]');
+                if (key && value && key.value && value.value) {
+                    infoFields.push({ key: key.value, value: value.value });
+                }
+            });
+
+            var references = [];
+            document.querySelectorAll('.reference-field-group').forEach(function(group) {
+                var refTitle = group.querySelector('input[name*="[title]"]');
+                var url = group.querySelector('input[name*="[url]"]');
+                if ((refTitle && refTitle.value) || (url && url.value)) {
+                    references.push({
+                        title: refTitle ? refTitle.value : '',
+                        url: url ? url.value : ''
+                    });
+                }
+            });
+
+            // Create a form and submit to preview route
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("articles.preview") }}';
+            form.target = '_blank';
+
+            // Add CSRF token
+            var csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+
+            // Add title
+            var titleInput = document.createElement('input');
+            titleInput.type = 'hidden';
+            titleInput.name = 'title';
+            titleInput.value = title;
+            form.appendChild(titleInput);
+
+            // Add content
+            var contentInput = document.createElement('input');
+            contentInput.type = 'hidden';
+            contentInput.name = 'content';
+            contentInput.value = content;
+            form.appendChild(contentInput);
+
+            // Add summary
+            if (summary) {
+                var summaryInput = document.createElement('input');
+                summaryInput.type = 'hidden';
+                summaryInput.name = 'summary';
+                summaryInput.value = summary;
+                form.appendChild(summaryInput);
+            }
+
+            // Add draft_reason
+            var draftReason = document.querySelector('#draft_reason')?.value;
+            if (draftReason) {
+                var draftReasonInput = document.createElement('input');
+                draftReasonInput.type = 'hidden';
+                draftReasonInput.name = 'draft_reason';
+                draftReasonInput.value = draftReason;
+                form.appendChild(draftReasonInput);
+            }
+
+            // Add info fields
+            infoFields.forEach(function(field, index) {
+                var keyInput = document.createElement('input');
+                keyInput.type = 'hidden';
+                keyInput.name = 'info[' + index + '][key]';
+                keyInput.value = field.key;
+                form.appendChild(keyInput);
+
+                var valueInput = document.createElement('input');
+                valueInput.type = 'hidden';
+                valueInput.name = 'info[' + index + '][value]';
+                valueInput.value = field.value;
+                form.appendChild(valueInput);
+            });
+
+            // Add references as JSON
+            var referencesInput = document.createElement('input');
+            referencesInput.type = 'hidden';
+            referencesInput.name = 'references';
+            referencesInput.value = JSON.stringify(references);
+            form.appendChild(referencesInput);
+
+            // Append form to body, submit, and remove
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        };
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/43.3.1/ckeditor5.css" />
-    
+
     <style>
         /* CKEditor Heading Styles */
         .ck-content h1 {
@@ -497,12 +666,12 @@
             font-weight: bold;
             margin: 1.33em 0;
         }
-        
+
         /* Ensure CKEditor has enough height */
         .ck-editor__editable {
             min-height: 500px;
         }
-        
+
         /* Make infobox sticky on scroll */
         @media (min-width: 1024px) {
             .sticky {

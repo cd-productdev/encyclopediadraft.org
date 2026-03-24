@@ -14,8 +14,8 @@ class UserController extends Controller
 {
     public function index(Request $request): View
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can manage users.');
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+            abort(403, 'Only administrators and moderators can manage users.');
         }
 
         $query = User::query();
@@ -43,8 +43,8 @@ class UserController extends Controller
 
     public function create(): View
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can manage users.');
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+            abort(403, 'Only administrators and moderators can manage users.');
         }
 
         return view('admin.users.create');
@@ -52,8 +52,8 @@ class UserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can manage users.');
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+            abort(403, 'Only administrators and moderators can manage users.');
         }
 
         $validated = $request->validate([
@@ -73,8 +73,8 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can manage users.');
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+            abort(403, 'Only administrators and moderators can manage users.');
         }
 
         return view('admin.users.edit', compact('user'));
@@ -82,8 +82,8 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can manage users.');
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+            abort(403, 'Only administrators and moderators can manage users.');
         }
 
         $validated = $request->validate([
@@ -100,8 +100,8 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can manage users.');
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+            abort(403, 'Only administrators and moderators can manage users.');
         }
 
         // Prevent admin from deleting themselves
@@ -118,8 +118,8 @@ class UserController extends Controller
 
     public function restore($id): RedirectResponse
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can manage users.');
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+            abort(403, 'Only administrators and moderators can manage users.');
         }
 
         $user = User::onlyTrashed()->findOrFail($id);
@@ -131,8 +131,8 @@ class UserController extends Controller
 
     public function forceDelete($id): RedirectResponse
     {
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can manage users.');
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+            abort(403, 'Only administrators and moderators can manage users.');
         }
 
         $user = User::onlyTrashed()->findOrFail($id);
@@ -151,7 +151,7 @@ class UserController extends Controller
 
     public function changePassword(Request $request, User $user): JsonResponse
     {
-        if (auth()->user()->role !== 'admin') {
+        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 

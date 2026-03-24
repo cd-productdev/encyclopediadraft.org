@@ -5,13 +5,25 @@
     <meta name="keywords" content="HTML, CSS, JavaScript" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ $article->title }} - {{ config('app.name') }}</title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ asset('encyclopediadrafts/styles.css') }}" />
 
     <style>
         .inner-content .inner-main .desc {
             position: relative;
+        }
+        .preview-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 9999;
+            background: #6c63ff;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         .status-badge {
             display: inline-block;
@@ -75,7 +87,7 @@
             max-width: 100%;
             height: auto;
         }
-        
+
         /* Image floating for text wrapping */
         .desc .image-style-side,
         .desc img[style*="float: right"],
@@ -84,14 +96,14 @@
             margin: 0 0 1em 1em;
             max-width: 50%;
         }
-        
+
         .desc img[style*="float: left"],
         .desc figure[style*="float: left"] {
             float: left;
             margin: 0 1em 1em 0;
             max-width: 50%;
         }
-        
+
         /* Block images (centered) */
         .desc .image-style-block,
         .desc figure.image {
@@ -99,14 +111,14 @@
             margin: 1em auto;
             text-align: center;
         }
-        
+
         /* Inline images */
         .desc .image-style-inline {
             display: inline-block;
             margin: 0 0.5em;
             max-width: 100%;
         }
-        
+
         /* Figure captions */
         .desc figure figcaption {
             font-size: 0.9em;
@@ -115,33 +127,37 @@
             margin-top: 0.5em;
             text-align: center;
         }
-        
+
         /* Clear floats after content */
         .desc::after {
             content: "";
             display: table;
             clear: both;
         }
-        
+
         /* Text alignment support */
         .desc .text-align-left {
             text-align: left;
         }
-        
+
         .desc .text-align-center {
             text-align: center;
         }
-        
+
         .desc .text-align-right {
             text-align: right;
         }
-        
+
         .desc .text-align-justify {
             text-align: justify;
         }
     </style>
 </head>
 <body>
+    @if(isset($isPreview) && $isPreview)
+        <div class="preview-badge">🔍 PREVIEW MODE</div>
+    @endif
+
     <main>
         <section class="main-content">
             <!-- Sidebar -->
@@ -274,6 +290,13 @@
                                     </h6>
                                     <span class="inner-sm">Created by {{ $article->creator->name ?? 'Unknown' }} on {{ $article->created_at->format('F d, Y') }}</span>
 
+                                    <!-- Lock Icon (Top Right) -->
+                                    <div style="position: absolute; top: 10px; right: 10px;">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.6;">
+                                            <path d="M18 8H17V6C17 3.24 14.76 1 12 1C9.24 1 7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM9 6C9 4.34 10.34 3 12 3C13.66 3 15 4.34 15 6V8H9V6ZM18 20H6V10H18V20ZM12 17C13.1 17 14 16.1 14 15C14 13.9 13.1 13 12 13C10.9 13 10 13.9 10 15C10 16.1 10.9 17 12 17Z" fill="#54595d"/>
+                                        </svg>
+                                    </div>
+
                                     <!-- Action Buttons -->
                                     {{-- @if(auth()->user()->id === $article->created_by || in_array(auth()->user()->role, ['admin', 'moderator']))
                                         <div class="action-buttons">
@@ -296,37 +319,15 @@
                                         </div>
                                     @endif --}}
                                 </div>
-
                                 <!-- Status Notifications -->
                                 @if($article->status === 'draft')
                                     <div class="row justify-content-center align-items-center">
                                         <div class="col-10">
                                             <div class="wiki-items">
                                                 <div class="wk-issue">
-                                                    <p>This article may meet Wikipedia's criteria for speedy deletion as pure vandalism. This includes blatant and obvious misinformation, and redirects created during cleanup of page move vandalism.</p>
-                                                    <p>This article is an orphan, as no other articles link to it. Please introduce links to this page from related articles</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @elseif($article->status === 'pending')
-                                    <div class="row justify-content-center align-items-center">
-                                        <div class="col-10">
-                                            <div class="wiki-items">
-                                                <div class="wk-issue">
-                                                    <p>This article may meet Wikipedia's criteria for speedy deletion as pure vandalism. This includes blatant and obvious misinformation, and redirects created during cleanup of page move vandalism.</p>
-                                                    <p>This article is an orphan, as no other articles link to it. Please introduce links to this page from related articles</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @elseif($article->status === 'rejected')
-                                    <div class="row justify-content-center align-items-center">
-                                        <div class="col-10">
-                                            <div class="wiki-items">
-                                                <div class="wk-issue">
-                                                    <p>This article may meet Wikipedia's criteria for speedy deletion as pure vandalism. This includes blatant and obvious misinformation, and redirects created during cleanup of page move vandalism.</p>
-                                                    <p>This article is an orphan, as no other articles link to it. Please introduce links to this page from related articles</p>
+                                                     @if($article->draft_reason)
+                                                    <p> {{ $article->draft_reason }}</p>
+                                                     @endif
                                                 </div>
                                             </div>
                                         </div>
@@ -384,12 +385,12 @@
                                             return !empty($ref['title']) || !empty($ref['url']);
                                         });
                                     @endphp
-                                    
+
                                     @if(count($refs) > 0)
                                         <div class="col-12">
                                             <div class="desc custom-table" style="margin-top: 30px;">
                                                 <h2 style="font-size: 24px; font-weight: 400; border-bottom: 1px solid #a2a9b1; padding-bottom: 4px; margin-bottom: 15px;">References</h2>
-                                                
+
                                                 <!-- Wikipedia-style reference list with columns -->
                                                 <div style="column-count: 2; column-gap: 30px; -webkit-column-count: 2; -moz-column-count: 2;">
                                                     <ol style="list-style-position: outside; padding-left: 0; margin-left: 20px; font-size: 13px; line-height: 1.8;">

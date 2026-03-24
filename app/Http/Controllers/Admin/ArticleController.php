@@ -58,7 +58,7 @@ class ArticleController extends Controller
         ));
     }
 
-    public function approve(string $slug): RedirectResponse
+    public function approve(string $slug)
     {
         if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Unauthorized access.');
@@ -72,6 +72,14 @@ class ArticleController extends Controller
             'reviewed_by' => auth()->id(),
             'rejection_reason' => null,
         ]);
+
+        // Return JSON for AJAX requests
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Article approved and published successfully!'
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Article approved and published successfully!');
     }

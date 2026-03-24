@@ -8,6 +8,12 @@
                 <p class="text-sm text-gray-600 mt-1">Welcome back, {{ auth()->user()->name }}! Here's what's happening today.</p>
             </div>
             <div class="flex gap-3">
+                <a href="{{ route('articles.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Create Article
+                </a>
                 <a href="{{ route('admin.articles.index') }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -26,9 +32,9 @@
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
+
             <!-- Statistics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                 <!-- Total Users Card -->
                 <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-200">
                     <div class="flex items-center justify-between">
@@ -68,7 +74,7 @@
                 </div>
 
                 <!-- Pending Reviews Card -->
-                <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-200">
+                {{-- <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-200">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-yellow-100 text-sm font-semibold uppercase tracking-wide">Pending Review</p>
@@ -83,10 +89,10 @@
                     <div class="mt-4 text-sm text-yellow-100">
                         Awaiting moderation
                     </div>
-                </div>
+                </div> --}}
 
                 <!-- Published Articles Card -->
-                <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-200">
+                {{-- <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-200">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-green-100 text-sm font-semibold uppercase tracking-wide">Published</p>
@@ -101,13 +107,14 @@
                     <div class="mt-4 text-sm text-green-100">
                         Live articles on platform
                     </div>
-                </div>
+                </div> --}}
             </div>
 
             <!-- Article Status Breakdown -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                 <!-- Article Status -->
-                <div class="bg-white rounded-xl shadow-md border border-gray-100 p-6">
+                {{-- <div class="bg-white rounded-xl shadow-md border border-gray-100 p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
@@ -132,7 +139,7 @@
                             <span class="text-lg font-bold text-red-900">{{ $rejectedArticles }}</span>
                         </div>
                     </div>
-                </div>
+                </div> --}}
 
                 <!-- Top Contributors -->
                 <div class="bg-white rounded-xl shadow-md border border-gray-100 p-6">
@@ -185,25 +192,24 @@
                 </div>
             </div>
 
-            <!-- Pending Reviews -->
-            @if($pendingReviews->count() > 0)
+            <!-- Recent Articles -->
             <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                <div class="bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4">
+                <div class="bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-4">
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        Pending Article Reviews ({{ $pendingReviews->count() }})
+                        Recent Articles ({{ $recentArticles->count() }})
                     </h3>
                 </div>
                 <div class="p-6">
                     <div class="space-y-4">
-                        @foreach($pendingReviews as $article)
+                        @forelse($recentArticles as $article)
                             <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all">
                                 <div class="flex items-start justify-between gap-4">
                                     <div class="flex-1">
                                         <h4 class="font-bold text-gray-900 mb-1">{{ $article->title }}</h4>
-                                        <div class="flex items-center gap-4 text-sm text-gray-600">
+                                        <div class="flex items-center gap-4 text-sm text-gray-600 mb-2">
                                             <span class="flex items-center gap-1">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -214,86 +220,35 @@
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                                 </svg>
-                                                Submitted {{ $article->submitted_at ? $article->submitted_at->diffForHumans() : 'N/A' }}
+                                                {{ $article->created_at->format('M d, Y') }}
+                                            </span>
+                                            <span>
+                                                @if($article->status === 'draft')
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-800">Draft</span>
+                                                @elseif($article->status === 'pending')
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-200 text-yellow-800">Pending</span>
+                                                @elseif($article->status === 'published')
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-200 text-green-800">Published</span>
+                                                @elseif($article->status === 'rejected')
+                                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-200 text-red-800">Rejected</span>
+                                                @endif
                                             </span>
                                         </div>
                                     </div>
                                     <div class="flex gap-2">
                                         <a href="{{ route('articles.show', $article->slug) }}" class="px-4 py-2 bg-blue-50 text-blue-700 text-sm font-semibold rounded-lg hover:bg-blue-100 transition-colors">
-                                            Review
+                                            View
                                         </a>
-                                        <form method="POST" action="{{ route('articles.approve', $article->slug) }}" class="inline">
-                                            @csrf
-                                            <button type="submit" class="px-4 py-2 bg-green-50 text-green-700 text-sm font-semibold rounded-lg hover:bg-green-100 transition-colors">
-                                                Approve
-                                            </button>
-                                        </form>
+                                        <a href="{{ route('articles.edit', $article->slug) }}" class="px-4 py-2 bg-green-50 text-green-700 text-sm font-semibold rounded-lg hover:bg-green-100 transition-colors">
+                                            Edit
+                                        </a>
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
+                        @empty
+                            <p class="text-sm text-gray-500 text-center py-8">No articles yet</p>
+                        @endforelse
                     </div>
-                </div>
-            </div>
-            @endif
-
-            <!-- Recent Articles -->
-            <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-500 to-purple-500 px-6 py-4">
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Recent Articles
-                    </h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($recentArticles as $article)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4">
-                                        <a href="{{ route('articles.show', $article->slug) }}" class="text-blue-600 hover:text-blue-800 font-medium">
-                                            {{ Str::limit($article->title, 50) }}
-                                        </a>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">
-                                        {{ $article->creator->name ?? 'Unknown' }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        @if($article->status === 'draft')
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-800">Draft</span>
-                                        @elseif($article->status === 'pending')
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-200 text-yellow-800">Pending</span>
-                                        @elseif($article->status === 'published')
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-200 text-green-800">Published</span>
-                                        @elseif($article->status === 'rejected')
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-200 text-red-800">Rejected</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">
-                                        {{ $article->created_at->format('M d, Y') }}
-                                    </td>
-                                    <td class="px-6 py-4 text-right text-sm font-medium">
-                                        <a href="{{ route('articles.show', $article->slug) }}" class="text-blue-600 hover:text-blue-900">View</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">No articles yet</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
                 </div>
             </div>
 

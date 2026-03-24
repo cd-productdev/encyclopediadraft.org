@@ -14,18 +14,16 @@ class ArticleSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
+   public function run(): void
     {
         $users = User::all();
-        
+
         if ($users->isEmpty()) {
             $this->command->error('No users found. Please run UserSeeder first.');
             return;
         }
 
         $statuses = ['draft', 'pending', 'published', 'rejected'];
-        
-        // Article topics for more realistic content
         $topics = [
             'History', 'Science', 'Technology', 'Geography', 'Biography',
             'Philosophy', 'Literature', 'Art', 'Music', 'Sports',
@@ -34,19 +32,17 @@ class ArticleSeeder extends Seeder
             'Anthropology', 'Archaeology', 'Architecture', 'Astronomy', 'Education'
         ];
 
-        $this->command->info('Creating 100 articles...');
-        $progressBar = $this->command->getOutput()->createProgressBar(100);
+        // Increased to 200
+        $totalArticles = 200;
+        $this->command->info("Creating {$totalArticles} articles...");
+        $progressBar = $this->command->getOutput()->createProgressBar($totalArticles);
 
-        for ($i = 1; $i <= 100; $i++) {
+        for ($i = 1; $i <= $totalArticles; $i++) {
             $topic = $topics[array_rand($topics)];
             $title = $this->generateTitle($topic, $i);
             $status = $statuses[array_rand($statuses)];
             $user = $users->random();
-
-            // Generate 500-word content
             $content = $this->generateContent(500);
-            
-            // Generate summary (first 100-150 words)
             $summary = Str::limit(strip_tags($content), 200);
 
             $articleData = [
@@ -60,23 +56,23 @@ class ArticleSeeder extends Seeder
                 'updated_at' => now()->subDays(rand(0, 30)),
             ];
 
-            // Add status-specific timestamps
-            if ($status === 'pending') {
-                $articleData['submitted_at'] = now()->subDays(rand(1, 10));
-            } elseif ($status === 'published') {
+            // Timestamps and Reviewer logic
+            if (in_array($status, ['published', 'rejected'])) {
                 $articleData['submitted_at'] = now()->subDays(rand(10, 30));
-                $articleData['published_at'] = now()->subDays(rand(1, 10));
                 $articleData['reviewed_by'] = $users->where('role', 'admin')->first()->id ?? $users->first()->id;
-            } elseif ($status === 'rejected') {
-                $articleData['submitted_at'] = now()->subDays(rand(5, 20));
-                $articleData['reviewed_by'] = $users->where('role', 'admin')->first()->id ?? $users->first()->id;
-                $articleData['rejection_reason'] = 'Needs more references and better sources. Please revise and resubmit.';
+
+                if ($status === 'published') {
+                    $articleData['published_at'] = now()->subDays(rand(1, 10));
+                } else {
+                    $articleData['rejection_reason'] = 'Needs more references and better sources.';
+                }
+            } elseif ($status === 'pending') {
+                $articleData['submitted_at'] = now()->subDays(rand(1, 10));
             }
 
-            // Add references (2-5 references per article)
-            $referencesCount = rand(2, 5);
+            // References
             $references = [];
-            for ($j = 0; $j < $referencesCount; $j++) {
+            for ($j = 0; $j < rand(2, 5); $j++) {
                 $references[] = [
                     'title' => 'Reference ' . ($j + 1) . ': ' . $this->generateReferenceTitle(),
                     'url' => 'https://example.com/reference/' . Str::random(10),
@@ -84,12 +80,13 @@ class ArticleSeeder extends Seeder
             }
             $articleData['references'] = json_encode($references);
 
+            // Create Article
             $article = Article::create($articleData);
 
-            // Add article attributes (infobox fields) - 3-6 attributes per article
-            $attributesCount = rand(3, 6);
+            // Attributes
             $attributeKeys = ['Type', 'Category', 'Field', 'Origin', 'Period', 'Location', 'Founded', 'Author', 'Date', 'Source'];
-            
+            $attributesCount = rand(3, 6);
+
             for ($k = 0; $k < $attributesCount; $k++) {
                 $key = $attributeKeys[array_rand($attributeKeys)];
                 ArticleAttribute::create([
@@ -104,7 +101,22 @@ class ArticleSeeder extends Seeder
 
         $progressBar->finish();
         $this->command->newLine();
-        $this->command->info('Successfully created 100 articles!');
+        $this->command->info("Successfully created {$totalArticles} articles!");
+    }
+
+    /**
+     * Improved Slug generation to prevent collisions
+     */
+    private function generateUniqueSlug(string $title): string
+    {
+        $slug = Str::slug($title) . '-' . Str::random(5);
+
+        // Check if exists, if so, re-generate
+        while (Article::where('slug', $slug)->exists()) {
+            $slug = Str::slug($title) . '-' . Str::random(8);
+        }
+
+        return $slug;
     }
 
     /**
@@ -132,11 +144,6 @@ class ArticleSeeder extends Seeder
     /**
      * Generate unique slug for article
      */
-    private function generateUniqueSlug(string $title): string
-    {
-        $randomString = uniqid($title, true);
-        return rtrim(base64_encode($randomString), '=');
-    }
 
     /**
      * Generate article content with approximately the specified word count
@@ -145,7 +152,7 @@ class ArticleSeeder extends Seeder
     {
         $paragraphs = [];
         $wordsRemaining = $wordCount;
-        
+
         // Generate introduction
         $introParagraph = $this->generateParagraph(rand(40, 60));
         $paragraphs[] = "<h2>Introduction</h2>\n<p>" . $introParagraph . "</p>";
@@ -156,7 +163,7 @@ class ArticleSeeder extends Seeder
         $wordsPerSection = intval($wordsRemaining / $sectionsCount);
 
         $sections = ['Overview', 'Historical Background', 'Key Features', 'Significance', 'Impact', 'Development', 'Analysis', 'Applications'];
-        
+
         for ($i = 0; $i < $sectionsCount; $i++) {
             $sectionTitle = $sections[$i] ?? "Section " . ($i + 1);
             $sectionContent = $this->generateParagraph($wordsPerSection);

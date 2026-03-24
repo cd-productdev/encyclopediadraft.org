@@ -18,7 +18,7 @@
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            
+
             @if(session('success'))
                 <div class="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 text-green-800 px-6 py-4 rounded-r-lg shadow-sm">
                     <div class="flex items-center gap-3">
@@ -36,7 +36,7 @@
                     <p class="text-xs text-gray-600 font-semibold uppercase">Total</p>
                     <p class="text-2xl font-bold text-gray-900 mt-1">{{ $totalArticles }}</p>
                 </div>
-                <div class="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg shadow-md p-4 text-white">
+                {{-- <div class="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg shadow-md p-4 text-white">
                     <p class="text-xs font-semibold uppercase opacity-90">Drafts</p>
                     <p class="text-2xl font-bold mt-1">{{ $draftArticles }}</p>
                 </div>
@@ -55,7 +55,7 @@
                 <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-md p-4 text-white">
                     <p class="text-xs font-semibold uppercase opacity-90">Trashed</p>
                     <p class="text-2xl font-bold mt-1">{{ $trashedArticles }}</p>
-                </div>
+                </div> --}}
             </div>
 
             <!-- Filter Section -->
@@ -74,8 +74,8 @@
                         </div>
                         <div class="md:col-span-2">
                             <label for="search" class="block text-sm font-semibold text-gray-700 mb-2">Search</label>
-                            <input type="text" name="search" id="search" value="{{ request('search') }}" 
-                                placeholder="Search articles..." 
+                            <input type="text" name="search" id="search" value="{{ request('search') }}"
+                                placeholder="Search articles..."
                                 class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
                         </div>
                         <div class="flex items-end gap-2">
@@ -112,7 +112,7 @@
                                         </svg>
                                     </div>
                                 @endif
-                                
+
                                 <!-- Status Badge -->
                                 <div class="absolute top-2 right-2">
                                     @if($article->status === 'draft')
@@ -138,7 +138,7 @@
                                 <h3 class="text-base font-bold text-gray-900 mb-2 line-clamp-2">
                                     {{ $article->title }}
                                 </h3>
-                                
+
                                 @if($article->summary)
                                     <p class="text-xs text-gray-600 mb-3 line-clamp-2">{{ $article->summary }}</p>
                                 @endif
@@ -168,8 +168,8 @@
                                                 Restore
                                             </button>
                                         </form>
-                                        <form method="POST" action="{{ route('admin.articles.forceDelete', $article->id) }}" 
-                                              onsubmit="return confirm('Permanently delete? This cannot be undone!');" 
+                                        <form method="POST" action="{{ route('admin.articles.forceDelete', $article->id) }}"
+                                              onsubmit="return confirm('Permanently delete? This cannot be undone!');"
                                               class="flex-1">
                                             @csrf
                                             @method('DELETE')
@@ -183,19 +183,11 @@
                                         <a href="{{ route('articles.show', $article->slug) }}" class="flex-1 text-center px-2 py-1.5 bg-blue-50 text-blue-700 text-xs font-semibold rounded hover:bg-blue-100 transition-colors">
                                             View
                                         </a>
-                                        @if($article->status === 'pending')
-                                            <form method="POST" action="{{ route('admin.articles.approve', $article->slug) }}" class="flex-1">
-                                                @csrf
-                                                <button type="submit" class="w-full px-2 py-1.5 bg-green-50 text-green-700 text-xs font-semibold rounded hover:bg-green-100 transition-colors">
-                                                    Approve
-                                                </button>
-                                            </form>
-                                            <button onclick="openRejectModal('{{ $article->slug }}', '{{ $article->title }}')" class="flex-1 px-2 py-1.5 bg-orange-50 text-orange-700 text-xs font-semibold rounded hover:bg-orange-100 transition-colors">
-                                                Reject
-                                            </button>
-                                        @endif
-                                        <form method="POST" action="{{ route('admin.articles.destroy', $article->slug) }}" 
-                                              onsubmit="return confirm('Move to trash?');" 
+                                        <a href="{{ route('articles.edit', $article->slug) }}" class="flex-1 text-center px-2 py-1.5 bg-green-50 text-green-700 text-xs font-semibold rounded hover:bg-green-100 transition-colors">
+                                            Edit
+                                        </a>
+                                        <form method="POST" action="{{ route('admin.articles.destroy', $article->slug) }}"
+                                              onsubmit="return confirm('Move to trash?');"
                                               class="flex-1">
                                             @csrf
                                             @method('DELETE')
@@ -236,11 +228,11 @@
                     </svg>
                 </button>
             </div>
-            
+
             <form id="rejectForm" method="POST">
                 @csrf
                 <p class="text-sm text-gray-600 mb-4">Article: <span id="rejectArticleTitle" class="font-semibold text-gray-900"></span></p>
-                
+
                 <div class="mb-6">
                     <label for="rejection_reason" class="block text-sm font-semibold text-gray-700 mb-2">Rejection Reason *</label>
                     <textarea id="rejection_reason" name="rejection_reason" required rows="4"

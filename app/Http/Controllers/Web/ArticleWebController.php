@@ -21,9 +21,9 @@ class ArticleWebController extends Controller
         // Filter by status
         $statusFilter = $request->input('status', 'all');
 
-        // Check user role - ONLY admin role can see all articles
-        if ($user->role === 'admin') {
-            // Admins see all articles
+        // Check user role - Admin and moderator can see all articles
+        if (in_array($user->role, ['admin', 'moderator'])) {
+            // Admins and moderators see all articles
             $query = Article::with(['creator'])
                 ->whereNull('deleted_at');
             
@@ -107,6 +107,7 @@ class ArticleWebController extends Controller
             'content' => 'required|string',
             'summary' => 'nullable|string|max:500',
             'status' => 'required|in:draft,pending',
+            'draft_reason' => 'nullable|string|max:1000',
             'info' => 'nullable|array',
             'info.*.key' => 'nullable|string|max:255',
             'info.*.value' => 'nullable|string|max:500',
@@ -191,6 +192,7 @@ class ArticleWebController extends Controller
             'content' => 'required|string',
             'summary' => 'required|string|max:500',
             'status' => 'required|in:draft,pending,published,rejected',
+            'draft_reason' => 'nullable|string|max:1000',
             'info' => 'nullable|array',
             'info.*.key' => 'nullable|string|max:255',
             'info.*.value' => 'nullable|string|max:500',
@@ -345,6 +347,51 @@ class ArticleWebController extends Controller
 
         return redirect()->route('articles.show', $article->slug)
             ->with('success', 'Article rejected. Author has been notified.');
+    }
+
+    public function preview(Request $request): View
+    {
+        // Create a temporary article object from request data
+        $article = new Article();
+        $article->title = $request->input('title');
+        $article->content = $request->input('content');
+        $article->summary = $request->input('summary');
+        $article->status = 'draft';
+        $article->draft_reason = $request->input('draft_reason');
+        $article->created_by = auth()->id();
+        $article->created_at = now();
+        
+        // Parse references from JSON string if provided
+        $references = $request->input('references');
+        if (is_string($references)) {
+            $references = json_decode($references, true);
+        }
+        $article->references = $references ?: [];
+        
+        // Set creator relationship
+        $article->setRelation('creator', auth()->user());
+        
+        // Parse and set attributes (info fields)
+        $infoFields = $request->input('info', []);
+        $attributes = collect();
+        
+        foreach ($infoFields as $field) {
+            if (!empty($field['key']) && !empty($field['value'])) {
+                $attr = new ArticleAttribute();
+                $attr->key = $field['key'];
+                $attr->value = $field['value'];
+                $attributes->push($attr);
+            }
+        }
+        
+        $article->setRelation('attributes', $attributes);
+        $article->setRelation('reviewer', null);
+        
+        // Return the Wikipedia view with preview badge
+        return view('articles.show-wikipedia', [
+            'article' => $article,
+            'isPreview' => true
+        ]);
     }
 
     public function uploadImage(Request $request): JsonResponse
