@@ -364,6 +364,15 @@ class ArticleWebController extends Controller
         $article->created_by = auth()->id();
         $article->created_at = now();
 
+        // Handle infobox image upload for preview
+        if ($request->hasFile('infobox_image')) {
+            $path = $request->file('infobox_image')->store('infobox_images', 'public');
+            $article->infobox_image = $path;
+        } elseif ($request->input('existing_infobox_image')) {
+            // Use existing image path if provided (for edit preview)
+            $article->infobox_image = $request->input('existing_infobox_image');
+        }
+
         // Parse references from JSON string if provided
         $references = $request->input('references');
         if (is_string($references)) {

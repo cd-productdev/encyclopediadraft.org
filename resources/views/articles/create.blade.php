@@ -309,6 +309,7 @@
         }
 
         let editor;
+        window.editor = null; // Make editor globally accessible
 
         ClassicEditor
             .create(document.querySelector('#content'), {
@@ -360,6 +361,7 @@
             })
             .then(newEditor => {
                 editor = newEditor;
+                window.editor = newEditor; // Make globally accessible
 
                 // Start auto-save after editor is ready
                 setInterval(autoSaveFormData, 60000);
@@ -636,8 +638,14 @@
 
     <script>
         function previewArticle() {
+            // Check if editor is initialized
+            if (!window.editor) {
+                alert('Editor is still initializing. Please wait a moment and try again.');
+                return;
+            }
+
             var title = document.querySelector('#title').value;
-            var content = editor.getData();
+            var content = window.editor.getData();
             var summary = document.querySelector('#summary').value;
 
             if (!title) {
@@ -718,7 +726,7 @@
             }
 
             // Add show_lock_icon
-            var showLockIcon = document.querySelector('input[name="show_lock_icon"]');
+            var showLockIcon = document.querySelector('input[type="checkbox"][name="show_lock_icon"]');
             if (showLockIcon && showLockIcon.checked) {
                 var lockIconInput = document.createElement('input');
                 lockIconInput.type = 'hidden';
@@ -748,6 +756,15 @@
             referencesInput.name = 'references';
             referencesInput.value = JSON.stringify(references);
             form.appendChild(referencesInput);
+
+            // Add infobox image file if selected
+            var infoboxImageInput = document.querySelector('input[name="infobox_image"]');
+            if (infoboxImageInput && infoboxImageInput.files.length > 0) {
+                // Clone the file input to include in the form
+                var fileClone = infoboxImageInput.cloneNode(true);
+                form.appendChild(fileClone);
+                form.enctype = 'multipart/form-data';
+            }
 
             // Append form to body, submit, and remove
             document.body.appendChild(form);
