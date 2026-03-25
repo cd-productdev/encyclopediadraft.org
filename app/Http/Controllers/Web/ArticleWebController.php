@@ -17,7 +17,7 @@ class ArticleWebController extends Controller
     public function index(Request $request): View
     {
         $user = auth()->user();
-        
+
         // Filter by status
         $statusFilter = $request->input('status', 'all');
 
@@ -26,7 +26,7 @@ class ArticleWebController extends Controller
             // Admins and moderators see all articles
             $query = Article::with(['creator'])
                 ->whereNull('deleted_at');
-            
+
             if ($statusFilter !== 'all') {
                 $query->where('status', $statusFilter);
             }
@@ -35,16 +35,16 @@ class ArticleWebController extends Controller
             $query = Article::with(['creator'])
                 ->whereNull('deleted_at')
                 ->where('created_by', $user->id);
-            
+
             if ($statusFilter !== 'all') {
                 $query->where('status', $statusFilter);
             }
         }
 
         // Apply semantic search if search term provided
-        if ($request->has('search') && !empty($request->input('search'))) {
+        if ($request->has('search') && ! empty($request->input('search'))) {
             $searchTerm = $request->input('search');
-            
+
             // Use full-text search for better semantic matching
             $query->search($searchTerm);
         } else {
@@ -108,6 +108,7 @@ class ArticleWebController extends Controller
             'summary' => 'nullable|string|max:500',
             'status' => 'required|in:draft,pending',
             'draft_reason' => 'nullable|string|max:1000',
+            'show_lock_icon' => 'nullable|boolean',
             'info' => 'nullable|array',
             'info.*.key' => 'nullable|string|max:255',
             'info.*.value' => 'nullable|string|max:500',
@@ -143,7 +144,7 @@ class ArticleWebController extends Controller
                 return ! empty($item['title']) || ! empty($item['url']);
             });
             // JSON encode the references or set to null if empty
-            $validated['references'] = !empty($referencesData) ? json_encode(array_values($referencesData)) : null;
+            $validated['references'] = ! empty($referencesData) ? json_encode(array_values($referencesData)) : null;
         }
 
         $article = Article::create($validated);
@@ -167,9 +168,9 @@ class ArticleWebController extends Controller
         $article = Article::with('attributes')->where('slug', $slug)->firstOrFail();
 
         $user = auth()->user();
-        
+
         // Admin and moderator can edit any article, regular users can only edit their own
-        if (!in_array($user->role, ['admin', 'moderator']) && $user->id !== $article->created_by) {
+        if (! in_array($user->role, ['admin', 'moderator']) && $user->id !== $article->created_by) {
             abort(403, 'You can only edit your own articles.');
         }
 
@@ -181,9 +182,9 @@ class ArticleWebController extends Controller
         $article = Article::where('slug', $slug)->firstOrFail();
 
         $user = auth()->user();
-        
+
         // Admin and moderator can edit any article, regular users can only edit their own
-        if (!in_array($user->role, ['admin', 'moderator']) && $user->id !== $article->created_by) {
+        if (! in_array($user->role, ['admin', 'moderator']) && $user->id !== $article->created_by) {
             abort(403, 'You can only edit your own articles.');
         }
 
@@ -193,6 +194,7 @@ class ArticleWebController extends Controller
             'summary' => 'required|string|max:500',
             'status' => 'required|in:draft,pending,published,rejected',
             'draft_reason' => 'nullable|string|max:1000',
+            'show_lock_icon' => 'nullable|boolean',
             'info' => 'nullable|array',
             'info.*.key' => 'nullable|string|max:255',
             'info.*.value' => 'nullable|string|max:500',
@@ -241,7 +243,7 @@ class ArticleWebController extends Controller
                 return ! empty($item['title']) || ! empty($item['url']);
             });
             // JSON encode the references or set to null if empty
-            $validated['references'] = !empty($referencesData) ? json_encode(array_values($referencesData)) : null;
+            $validated['references'] = ! empty($referencesData) ? json_encode(array_values($referencesData)) : null;
         }
 
         $article->update($validated);
@@ -352,45 +354,46 @@ class ArticleWebController extends Controller
     public function preview(Request $request): View
     {
         // Create a temporary article object from request data
-        $article = new Article();
+        $article = new Article;
         $article->title = $request->input('title');
         $article->content = $request->input('content');
         $article->summary = $request->input('summary');
         $article->status = 'draft';
         $article->draft_reason = $request->input('draft_reason');
+        $article->show_lock_icon = $request->input('show_lock_icon', false);
         $article->created_by = auth()->id();
         $article->created_at = now();
-        
+
         // Parse references from JSON string if provided
         $references = $request->input('references');
         if (is_string($references)) {
             $references = json_decode($references, true);
         }
         $article->references = $references ?: [];
-        
+
         // Set creator relationship
         $article->setRelation('creator', auth()->user());
-        
+
         // Parse and set attributes (info fields)
         $infoFields = $request->input('info', []);
         $attributes = collect();
-        
+
         foreach ($infoFields as $field) {
-            if (!empty($field['key']) && !empty($field['value'])) {
-                $attr = new ArticleAttribute();
+            if (! empty($field['key']) && ! empty($field['value'])) {
+                $attr = new ArticleAttribute;
                 $attr->key = $field['key'];
                 $attr->value = $field['value'];
                 $attributes->push($attr);
             }
         }
-        
+
         $article->setRelation('attributes', $attributes);
         $article->setRelation('reviewer', null);
-        
+
         // Return the Wikipedia view with preview badge
         return view('articles.show-wikipedia', [
             'article' => $article,
-            'isPreview' => true
+            'isPreview' => true,
         ]);
     }
 

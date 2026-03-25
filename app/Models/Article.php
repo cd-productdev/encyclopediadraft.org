@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 
 class Article extends Model
 {
@@ -13,8 +12,11 @@ class Article extends Model
 
     // Status constants
     const STATUS_DRAFT = 'draft';
+
     const STATUS_PENDING = 'pending';
+
     const STATUS_PUBLISHED = 'published';
+
     const STATUS_REJECTED = 'rejected';
 
     protected $guarded = [];
@@ -27,6 +29,7 @@ class Article extends Model
         return [
             'metadata' => 'array',
             'references' => 'array',
+            'show_lock_icon' => 'boolean',
             'submitted_at' => 'datetime',
             'published_at' => 'datetime',
         ];
@@ -43,14 +46,14 @@ class Article extends Model
             if (empty($article->slug)) {
                 // Generate short unique base64-encoded slug (similar to MjcxMw==)
                 // Use article ID if available, otherwise use random number + timestamp
-                $uniqueNumber = time() . mt_rand(1000, 9999);
+                $uniqueNumber = time().mt_rand(1000, 9999);
                 $article->slug = rtrim(base64_encode($uniqueNumber), '=');
             }
         });
 
         static::updating(function ($article) {
             if ($article->isDirty('title') && empty($article->slug)) {
-                $uniqueNumber = time() . mt_rand(1000, 9999);
+                $uniqueNumber = time().mt_rand(1000, 9999);
                 $article->slug = rtrim(base64_encode($uniqueNumber), '=');
             }
         });
@@ -104,9 +107,9 @@ class Article extends Model
 
     /**
      * Scope for full-text search (semantic search)
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $searchTerm
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $searchTerm
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeSearch($query, $searchTerm)
@@ -117,10 +120,10 @@ class Article extends Model
 
         // Use MySQL FULLTEXT search for semantic-like matching
         return $query->whereRaw(
-            "MATCH(title, content, summary) AGAINST(? IN NATURAL LANGUAGE MODE)",
+            'MATCH(title, content, summary) AGAINST(? IN NATURAL LANGUAGE MODE)',
             [$searchTerm]
         )->selectRaw(
-            "*, MATCH(title, content, summary) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance_score",
+            '*, MATCH(title, content, summary) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance_score',
             [$searchTerm]
         )->orderByDesc('relevance_score');
     }
@@ -210,7 +213,7 @@ class Article extends Model
     public function canBeReviewedBy(string $role): bool
     {
         // Only admins and moderators can review
-        if (!in_array($role, ['admin', 'moderator'])) {
+        if (! in_array($role, ['admin', 'moderator'])) {
             return false;
         }
 

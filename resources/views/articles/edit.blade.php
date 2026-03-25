@@ -78,10 +78,22 @@
                                 <!-- Draft Reason (visible when status is draft) -->
                                 <div id="draftReasonField" style="display: none;">
                                     <label for="draft_reason" class="block text-sm font-medium text-gray-700 mb-2">Draft Reason</label>
-                                    <textarea name="draft_reason" id="draft_reason" rows="3" 
+                                    <textarea name="draft_reason" id="draft_reason" rows="3"
                                         placeholder="Explain why this article is in draft status (e.g., incomplete research, needs peer review, awaiting sources...)"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('draft_reason', $article->draft_reason) }}</textarea>
                                     <p class="text-xs text-gray-500 mt-1">This will be displayed in the article's warning box.</p>
+                                </div>
+
+                                <!-- Show Lock Icon Toggle -->
+                                <div>
+                                    <label class="flex items-center space-x-3">
+                                        <input type="hidden" name="show_lock_icon" value="0">
+                                        <input type="checkbox" name="show_lock_icon" value="1"
+                                            {{ old('show_lock_icon', $article->show_lock_icon) ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <span class="text-sm font-medium text-gray-700">Show lock icon on article page</span>
+                                    </label>
+                                    <p class="text-xs text-gray-500 mt-1 ml-7">Enable this to display a lock icon in the top-right corner of the article.</p>
                                 </div>
 
                                 <!-- References -->
@@ -423,7 +435,7 @@
         // Toggle Draft Reason field based on status
         const statusSelect = document.getElementById('status');
         const draftReasonField = document.getElementById('draftReasonField');
-        
+
         function toggleDraftReason() {
             if (statusSelect.value === 'draft') {
                 draftReasonField.style.display = 'block';
@@ -431,7 +443,7 @@
                 draftReasonField.style.display = 'none';
             }
         }
-        
+
         statusSelect.addEventListener('change', toggleDraftReason);
         // Initialize on page load
         toggleDraftReason();
@@ -595,6 +607,16 @@
                 draftReasonInput.name = 'draft_reason';
                 draftReasonInput.value = draftReason;
                 form.appendChild(draftReasonInput);
+            }
+
+            // Add show_lock_icon
+            var showLockIcon = document.querySelector('input[name="show_lock_icon"]');
+            if (showLockIcon && showLockIcon.checked) {
+                var lockIconInput = document.createElement('input');
+                lockIconInput.type = 'hidden';
+                lockIconInput.name = 'show_lock_icon';
+                lockIconInput.value = '1';
+                form.appendChild(lockIconInput);
             }
 
             // Add info fields

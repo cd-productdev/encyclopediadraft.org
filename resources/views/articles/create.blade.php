@@ -92,6 +92,18 @@
                                     <p class="text-xs text-gray-500 mt-1">This will be displayed in the article's warning box.</p>
                                 </div>
 
+                                <!-- Show Lock Icon Toggle -->
+                                <div>
+                                    <label class="flex items-center space-x-3">
+                                        <input type="hidden" name="show_lock_icon" value="0">
+                                        <input type="checkbox" name="show_lock_icon" value="1"
+                                            {{ old('show_lock_icon') ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <span class="text-sm font-medium text-gray-700">Show lock icon on article page</span>
+                                    </label>
+                                    <p class="text-xs text-gray-500 mt-1 ml-7">Enable this to display a lock icon in the top-right corner of the article.</p>
+                                </div>
+
                                 <!-- References -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">References</label>
@@ -703,6 +715,16 @@
                 draftReasonInput.name = 'draft_reason';
                 draftReasonInput.value = draftReason;
                 form.appendChild(draftReasonInput);
+            }
+
+            // Add show_lock_icon
+            var showLockIcon = document.querySelector('input[name="show_lock_icon"]');
+            if (showLockIcon && showLockIcon.checked) {
+                var lockIconInput = document.createElement('input');
+                lockIconInput.type = 'hidden';
+                lockIconInput.name = 'show_lock_icon';
+                lockIconInput.value = '1';
+                form.appendChild(lockIconInput);
             }
 
             // Add info fields
