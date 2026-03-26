@@ -155,7 +155,7 @@
 </head>
 <body>
     @if(isset($isPreview) && $isPreview)
-        <div class="preview-badge">🔍 PREVIEW MODE</div>
+        {{-- <div class="preview-badge">🔍 PREVIEW MODE</div> --}}
     @endif
 
     <main>
@@ -231,12 +231,9 @@
 
               <ul class="side-ul">
                 <li class="side-li">
-                  <a
-                    href="https://en.wikipedia.org/wiki/Help:Contents"
+                  <a href="https://en.wikipedia.org/wiki/Help:Contents"
                     target="_blank"
-                    class="anchor"
-                    >Help</a
-                  >
+                    class="anchor">Help</a>
                 </li>
                 <li class="side-li">
                   <a

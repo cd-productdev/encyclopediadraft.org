@@ -66,21 +66,30 @@
                             placeholder="john@example.com">
                     </div>
 
-                    <!-- Role -->
-                    <div>
-                        <label for="role" class="block text-sm font-semibold text-gray-700 mb-2">
-                            User Role <span class="text-red-500">*</span>
-                        </label>
-                        <select name="role" id="role" required
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
-                            <option value="user" {{ old('role', $user->role) === 'user' ? 'selected' : '' }}>User (Regular)</option>
-                            <option value="moderator" {{ old('role', $user->role) === 'moderator' ? 'selected' : '' }}>Moderator</option>
-                            <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>Administrator</option>
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">
-                            Admins have full access, moderators can manage content, users can create articles.
-                        </p>
-                    </div>
+                    <!-- Role (administrators only) -->
+                    @if(auth()->user()->role === 'admin')
+                        <div>
+                            <label for="role" class="block text-sm font-semibold text-gray-700 mb-2">
+                                User Role <span class="text-red-500">*</span>
+                            </label>
+                            <select name="role" id="role" required
+                                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                                <option value="user" {{ old('role', $user->role) === 'user' ? 'selected' : '' }}>User (Regular)</option>
+                                <option value="moderator" {{ old('role', $user->role) === 'moderator' ? 'selected' : '' }}>Moderator</option>
+                                <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>Administrator</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Admins have full access, moderators can manage content, users can create articles.
+                            </p>
+                        </div>
+                    @else
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <p class="text-sm text-gray-700">
+                                <span class="font-semibold">Current role:</span> {{ ucfirst($user->role) }}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-2">Only an administrator can change user roles.</p>
+                        </div>
+                    @endif
 
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <div class="flex items-start gap-3">

@@ -65,21 +65,29 @@
                             placeholder="john@example.com">
                     </div>
 
-                    <!-- Role -->
-                    <div>
-                        <label for="role" class="block text-sm font-semibold text-gray-700 mb-2">
-                            User Role <span class="text-red-500">*</span>
-                        </label>
-                        <select name="role" id="role" required
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
-                            <option value="user" {{ old('role') === 'user' ? 'selected' : '' }}>User (Regular)</option>
-                            <option value="moderator" {{ old('role') === 'moderator' ? 'selected' : '' }}>Moderator</option>
-                            <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Administrator</option>
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">
-                            Admins have full access, moderators can manage content, users can create articles.
-                        </p>
-                    </div>
+                    <!-- Role (administrators only; managers create regular users) -->
+                    @if(auth()->user()->role === 'admin')
+                        <div>
+                            <label for="role" class="block text-sm font-semibold text-gray-700 mb-2">
+                                User Role <span class="text-red-500">*</span>
+                            </label>
+                            <select name="role" id="role" required
+                                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                                <option value="user" {{ old('role', 'user') === 'user' ? 'selected' : '' }}>User (Regular)</option>
+                                <option value="moderator" {{ old('role') === 'moderator' ? 'selected' : '' }}>Moderator</option>
+                                <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Administrator</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Admins have full access, moderators can manage content, users can create articles.
+                            </p>
+                        </div>
+                    @else
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p class="text-sm text-blue-800">
+                                <span class="font-semibold">Role:</span> New users are created as <strong>User (Regular)</strong>. Only an administrator can assign moderator or admin roles.
+                            </p>
+                        </div>
+                    @endif
 
                     <div class="border-t border-gray-200 pt-6"></div>
 

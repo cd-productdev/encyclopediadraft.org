@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AccountCreatedMail;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class UserController extends Controller
 {
     public function index(Request $request): View
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Only administrators and moderators can manage users.');
         }
 
@@ -43,7 +45,7 @@ class UserController extends Controller
 
     public function create(): View
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Only administrators and moderators can manage users.');
         }
 
@@ -52,28 +54,42 @@ class UserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Only administrators and moderators can manage users.');
         }
 
-        $validated = $request->validate([
+        $actorIsAdmin = auth()->user()->role === 'admin';
+
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:user,admin,moderator',
-        ]);
+        ];
 
-        $validated['password'] = Hash::make($validated['password']);
+        if ($actorIsAdmin) {
+            $rules['role'] = 'required|in:user,admin,moderator';
+        }
 
-        User::create($validated);
+        $validated = $request->validate($rules);
+
+        if (! $actorIsAdmin) {
+            $validated['role'] = 'user';
+        }
+
+        $plainPassword = $validated['password'];
+        $validated['password'] = Hash::make($plainPassword);
+
+        $user = User::create($validated);
+
+        Mail::to($user->email)->send(new AccountCreatedMail($user, $plainPassword));
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User created successfully!');
+            ->with('success', 'User created successfully! They have been emailed their sign-in details.');
     }
 
     public function edit(User $user): View
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Only administrators and moderators can manage users.');
         }
 
@@ -82,15 +98,26 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Only administrators and moderators can manage users.');
         }
 
-        $validated = $request->validate([
+        $actorIsAdmin = auth()->user()->role === 'admin';
+
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'role' => 'required|in:user,admin,moderator',
-        ]);
+        ];
+
+        if ($actorIsAdmin) {
+            $rules['role'] = 'required|in:user,admin,moderator';
+        }
+
+        $validated = $request->validate($rules);
+
+        if (! $actorIsAdmin) {
+            unset($validated['role']);
+        }
 
         $user->update($validated);
 
@@ -100,7 +127,7 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Only administrators and moderators can manage users.');
         }
 
@@ -118,7 +145,7 @@ class UserController extends Controller
 
     public function restore($id): RedirectResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Only administrators and moderators can manage users.');
         }
 
@@ -131,7 +158,7 @@ class UserController extends Controller
 
     public function forceDelete($id): RedirectResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Only administrators and moderators can manage users.');
         }
 
@@ -151,7 +178,7 @@ class UserController extends Controller
 
     public function changePassword(Request $request, User $user): JsonResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -165,7 +192,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Password changed successfully for '.$user->name.'!'
+            'message' => 'Password changed successfully for '.$user->name.'!',
         ]);
     }
 }
