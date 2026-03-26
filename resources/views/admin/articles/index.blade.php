@@ -1,18 +1,21 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
+        <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
+            <div class="min-w-0 shrink-0">
                 <h2 class="font-bold text-2xl text-gray-900 leading-tight">
                     Article Management
                 </h2>
                 <p class="text-sm text-gray-600 mt-1">Manage all articles on the platform</p>
             </div>
-            <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back to Dashboard
-            </a>
+            <div class="flex flex-row flex-wrap items-center gap-3 md:justify-end">
+                @include('admin.partials.quick-action-buttons')
+                <a href="{{ route('admin.dashboard') }}" class="inline-flex shrink-0 items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Dashboard
+                </a>
+            </div>
         </div>
     </x-slot>
 
