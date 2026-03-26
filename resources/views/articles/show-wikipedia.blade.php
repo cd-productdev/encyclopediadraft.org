@@ -318,15 +318,16 @@
                                         </div>
                                     @endif --}}
                                 </div>
-                                <!-- Status Notifications -->
-                                @if($article->status === 'draft')
+                                <!-- Status Notifications (only when draft includes a reason) -->
+                                @php
+                                    $draftNoticeText = trim((string) ($article->draft_reason ?? ''));
+                                @endphp
+                                @if($article->status === 'draft' && $draftNoticeText !== '')
                                     <div class="row justify-content-center align-items-center">
                                         <div class="col-10">
                                             <div class="wiki-items">
                                                 <div class="wk-issue">
-                                                     @if($article->draft_reason)
-                                                    <p> {{ $article->draft_reason }}</p>
-                                                     @endif
+                                                    <p>{{ $draftNoticeText }}</p>
                                                 </div>
                                             </div>
                                         </div>

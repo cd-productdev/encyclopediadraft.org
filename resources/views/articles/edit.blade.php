@@ -37,7 +37,7 @@
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <form method="POST" action="{{ route('articles.update', $article->slug) }}" enctype="multipart/form-data" id="articleForm">
+                    <form method="POST" action="{{ route('articles.update', $article->slug) }}" enctype="multipart/form-data" id="articleForm" target="_blank">
                         @csrf
                         @method('PUT')
 
@@ -75,14 +75,16 @@
                                     </select>
                                 </div>
 
-                                <!-- Draft Reason (visible when status is draft) -->
-                                <div id="draftReasonField" style="display: none;">
-                                    <label for="draft_reason" class="block text-sm font-medium text-gray-700 mb-2">Draft Reason</label>
-                                    <textarea name="draft_reason" id="draft_reason" rows="3"
-                                        placeholder="Explain why this article is in draft status (e.g., incomplete research, needs peer review, awaiting sources...)"
-                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">{{ old('draft_reason', $article->draft_reason) }}</textarea>
-                                    <p class="text-xs text-gray-500 mt-1">This will be displayed in the article's warning box.</p>
-                                </div>
+                                @php
+                                    $matchedDraftPresetKey = '';
+                                    foreach (config('article.draft_reason_presets', []) as $key => $text) {
+                                        if (trim((string) ($article->draft_reason ?? '')) === $text) {
+                                            $matchedDraftPresetKey = $key;
+                                            break;
+                                        }
+                                    }
+                                @endphp
+                                @include('articles.partials.draft-reason-options', ['selectedKey' => old('draft_reason_preset', $matchedDraftPresetKey)])
 
                                 <!-- Show Lock Icon Toggle -->
                                 <div>
@@ -434,11 +436,14 @@
             container.appendChild(newField);
         });
 
-        // Toggle Draft Reason field based on status
+        // Toggle draft notice options based on status (exclusive checkboxes → hidden draft_reason_preset)
         const statusSelect = document.getElementById('status');
         const draftReasonField = document.getElementById('draftReasonField');
 
         function toggleDraftReason() {
+            if (!draftReasonField || !statusSelect) {
+                return;
+            }
             if (statusSelect.value === 'draft') {
                 draftReasonField.style.display = 'block';
             } else {
@@ -446,9 +451,41 @@
             }
         }
 
+        function initDraftReasonCheckboxes() {
+            const hidden = document.getElementById('draft_reason_preset');
+            const boxes = document.querySelectorAll('.draft-reason-checkbox');
+            if (!hidden || !boxes.length) {
+                return;
+            }
+
+            function syncUiFromHidden() {
+                const v = hidden.value;
+                boxes.forEach(function(cb) {
+                    cb.checked = (cb.getAttribute('data-draft-preset') === v);
+                });
+            }
+
+            boxes.forEach(function(cb) {
+                cb.addEventListener('change', function() {
+                    if (cb.checked) {
+                        hidden.value = cb.getAttribute('data-draft-preset');
+                        boxes.forEach(function(other) {
+                            if (other !== cb) {
+                                other.checked = false;
+                            }
+                        });
+                    } else if (hidden.value === cb.getAttribute('data-draft-preset')) {
+                        hidden.value = '';
+                    }
+                });
+            });
+
+            syncUiFromHidden();
+        }
+
         statusSelect.addEventListener('change', toggleDraftReason);
-        // Initialize on page load
         toggleDraftReason();
+        initDraftReasonCheckboxes();
 
         // Image Upload Functionality
         const imageInput = document.getElementById('infobox_image');
@@ -601,14 +638,14 @@
                 form.appendChild(summaryInput);
             }
 
-            // Add draft_reason
-            var draftReason = document.querySelector('#draft_reason')?.value;
-            if (draftReason) {
-                var draftReasonInput = document.createElement('input');
-                draftReasonInput.type = 'hidden';
-                draftReasonInput.name = 'draft_reason';
-                draftReasonInput.value = draftReason;
-                form.appendChild(draftReasonInput);
+            // Add draft_reason_preset for preview
+            var draftPreset = document.querySelector('#draft_reason_preset')?.value;
+            if (draftPreset) {
+                var draftPresetInput = document.createElement('input');
+                draftPresetInput.type = 'hidden';
+                draftPresetInput.name = 'draft_reason_preset';
+                draftPresetInput.value = draftPreset;
+                form.appendChild(draftPresetInput);
             }
 
             // Add show_lock_icon

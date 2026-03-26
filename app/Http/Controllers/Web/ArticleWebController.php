@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ArticleWebController extends Controller
@@ -107,7 +108,7 @@ class ArticleWebController extends Controller
             'content' => 'required|string',
             'summary' => 'nullable|string|max:500',
             'status' => 'required|in:draft,pending',
-            'draft_reason' => 'nullable|string|max:1000',
+            'draft_reason_preset' => ['nullable', 'string', Rule::in(array_keys(config('article.draft_reason_presets', [])))],
             'show_lock_icon' => 'nullable|boolean',
             'info' => 'nullable|array',
             'info.*.key' => 'nullable|string|max:255',
@@ -124,6 +125,12 @@ class ArticleWebController extends Controller
         if ($validated['status'] === Article::STATUS_PENDING) {
             $validated['submitted_at'] = now();
         }
+
+        $validated['draft_reason'] = $this->resolveDraftReasonFromPreset(
+            $validated['status'],
+            $validated['draft_reason_preset'] ?? null
+        );
+        unset($validated['draft_reason_preset']);
 
         if ($request->hasFile('infobox_image')) {
             $path = $request->file('infobox_image')->store('infobox_images', 'public');
@@ -193,7 +200,7 @@ class ArticleWebController extends Controller
             'content' => 'required|string',
             'summary' => 'required|string|max:500',
             'status' => 'required|in:draft,pending,published,rejected',
-            'draft_reason' => 'nullable|string|max:1000',
+            'draft_reason_preset' => ['nullable', 'string', Rule::in(array_keys(config('article.draft_reason_presets', [])))],
             'show_lock_icon' => 'nullable|boolean',
             'info' => 'nullable|array',
             'info.*.key' => 'nullable|string|max:255',
@@ -214,6 +221,12 @@ class ArticleWebController extends Controller
             $validated['submitted_at'] = now();
             $validated['rejection_reason'] = null;
         }
+
+        $validated['draft_reason'] = $this->resolveDraftReasonFromPreset(
+            $validated['status'],
+            $validated['draft_reason_preset'] ?? null
+        );
+        unset($validated['draft_reason_preset']);
 
         if ($request->has('remove_image') && $article->infobox_image) {
             Storage::disk('public')->delete($article->infobox_image);
@@ -359,7 +372,10 @@ class ArticleWebController extends Controller
         $article->content = $request->input('content');
         $article->summary = $request->input('summary');
         $article->status = 'draft';
-        $article->draft_reason = $request->input('draft_reason');
+        $article->draft_reason = $this->resolveDraftReasonFromPreset(
+            Article::STATUS_DRAFT,
+            $request->input('draft_reason_preset')
+        );
         $article->show_lock_icon = $request->input('show_lock_icon', false);
         $article->created_by = auth()->id();
         $article->created_at = now();
@@ -423,5 +439,19 @@ class ArticleWebController extends Controller
         }
 
         return response()->json(['error' => 'No image uploaded'], 400);
+    }
+
+    protected function resolveDraftReasonFromPreset(?string $status, ?string $presetKey): ?string
+    {
+        if ($status !== Article::STATUS_DRAFT) {
+            return null;
+        }
+
+        $map = config('article.draft_reason_presets', []);
+        if ($presetKey !== null && $presetKey !== '' && isset($map[$presetKey])) {
+            return $map[$presetKey];
+        }
+
+        return null;
     }
 }
