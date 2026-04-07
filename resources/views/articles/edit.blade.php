@@ -239,7 +239,7 @@
 
                         <!-- Submit Buttons -->
                         <div class="flex justify-end gap-4 pt-6 mt-6 border-t border-gray-200">
-                            <a href="{{ route('articles.index') }}" class="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                            <a href="{{ in_array(auth()->user()->role, ['admin', 'moderator']) ? route('admin.articles.index') : route('articles.index') }}" class="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
                                 Cancel
                             </a>
                             <button type="button" onclick="previewArticle()" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-purple-700 flex items-center gap-2">
