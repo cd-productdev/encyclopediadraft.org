@@ -763,6 +763,36 @@
                 form.appendChild(lockIconInput);
             }
 
+            // Status for accurate preview
+            var statusSelect = document.querySelector('#status');
+            if (statusSelect && statusSelect.value) {
+                var statusInput = document.createElement('input');
+                statusInput.type = 'hidden';
+                statusInput.name = 'status';
+                statusInput.value = statusSelect.value;
+                form.appendChild(statusInput);
+            }
+
+            // Rejection reasons + checkboxes
+            for (var ri = 0; ri < 4; ri++) {
+                var reasonEl = document.querySelector('input[name="rejection_reason[' + ri + ']"]');
+                if (reasonEl) {
+                    var rIn = document.createElement('input');
+                    rIn.type = 'hidden';
+                    rIn.name = 'rejection_reason[' + ri + ']';
+                    rIn.value = reasonEl.value || '';
+                    form.appendChild(rIn);
+                }
+                var activeEl = document.querySelector('input[type="checkbox"][name="rejection_active[' + ri + ']"]');
+                if (activeEl && activeEl.checked) {
+                    var aIn = document.createElement('input');
+                    aIn.type = 'hidden';
+                    aIn.name = 'rejection_active[' + ri + ']';
+                    aIn.value = '1';
+                    form.appendChild(aIn);
+                }
+            }
+
             // Add info fields
             infoFields.forEach(function(field, index) {
                 var keyInput = document.createElement('input');

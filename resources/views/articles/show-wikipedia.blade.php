@@ -151,6 +151,25 @@
         .desc .text-align-justify {
             text-align: justify;
         }
+
+        /* encyclopedia.css .wk-issue::before icon is ~32px; inline padding:15px removes styles.css padding-left:60px and overlaps text */
+        .inner-content .inner-main .wiki-items .wk-issue.wk-issue--icon-space {
+            padding-top: 15px;
+            padding-right: 15px;
+            padding-bottom: 15px;
+            padding-left: 3.75rem;
+        }
+
+        .inner-content .inner-main .wiki-items .wk-issue.wk-issue--icon-space::before {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .inner-content .inner-main .wiki-items .wk-issue.wk-issue--draft-flex {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
     </style>
 </head>
 <body>
@@ -322,17 +341,48 @@
                                 @php
                                     $draftNoticeText = trim((string) ($article->draft_reason ?? ''));
                                 @endphp
-                                @if($article->status === 'draft' && $draftNoticeText !== '')
-                                    <div class="row justify-content-center align-items-center">
-                                        <div class="col-10">
-                                            <div class="wiki-items">
-                                                <div class="wk-issue">
-                                                    <p>{{ $draftNoticeText }}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
+                           <div class="row justify-content-center align-items-center">
+    <div class="col-12 col-xl-9">
+        {{-- Show Draft Reason if exists --}}
+        @if($article->status === 'draft' && !empty(trim((string)$article->draft_reason)))
+            <div class="wiki-items mb-3">
+                <div class="wk-issue wk-issue--icon-space wk-issue--draft-flex" style="border: 1px solid #a2a9b1; background-color: #f8f9fa;">
+
+                    <div>
+                        <p class="mb-0"><strong>This article is a draft:</strong> {{ $article->draft_reason }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- Rejection reasons: live = draft/rejected; preview = show whenever form sends checked lines with text --}}
+        @php
+            $displayRejectionReasons = $article->rejection_reason ?? [];
+            if (is_string($displayRejectionReasons)) {
+                $displayRejectionReasons = $displayRejectionReasons !== '' ? [$displayRejectionReasons] : [];
+            }
+            if (! is_array($displayRejectionReasons)) {
+                $displayRejectionReasons = [];
+            }
+            $isPreviewMode = isset($isPreview) && $isPreview;
+            $showRejectionNotices = count($displayRejectionReasons) > 0
+                && ($isPreviewMode || in_array($article->status, ['draft', 'rejected'], true));
+        @endphp
+        @if($showRejectionNotices)
+            @foreach($displayRejectionReasons as $reason)
+                <div class="wiki-items mb-3">
+                    <div class="wk-issue wk-issue--icon-space" style="border: 1px solid #c8ccd1; background-color: #fdf2f2; border-left: 10px solid #d33;">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="flex-grow-1 mb-0" style="min-width: 0;">
+                                <p class="mb-0">{{ $reason }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        @endif
+    </div>
+</div>
 
                                 <div class="row">
                                     <!-- Main Article Content -->

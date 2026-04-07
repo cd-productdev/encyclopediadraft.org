@@ -8,6 +8,8 @@ use App\Models\ArticleAttribute;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -103,71 +105,124 @@ class ArticleWebController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'summary' => 'nullable|string|max:500',
-            'status' => 'required|in:draft,pending',
-            'draft_reason_preset' => ['nullable', 'string', Rule::in(array_keys(config('article.draft_reason_presets', [])))],
-            'show_lock_icon' => 'nullable|boolean',
-            'info' => 'nullable|array',
-            'info.*.key' => 'nullable|string|max:255',
-            'info.*.value' => 'nullable|string|max:500',
-            'infobox_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'references' => 'nullable|array',
-            'references.*.title' => 'nullable|string|max:500',
-            'references.*.url' => 'nullable|url|max:1000',
-        ]);
 
-        $validated['created_by'] = auth()->id();
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'content' => 'required|string',
+                'summary' => 'nullable|string|max:500',
+                'status' => 'required|in:draft,pending,rejected',
+                'rejection_reason' => 'nullable|array',
+                'rejection_reason.*' => 'nullable|string|max:500',
+                'rejection_active' => 'nullable|array',
+                'rejection_active.*' => 'nullable|in:1',
+                'draft_reason_preset' => ['nullable', 'string', Rule::in(array_keys(config('article.draft_reason_presets', [])))],
+                'show_lock_icon' => 'nullable|boolean',
+                'info' => 'nullable|array',
+                'info.*.key' => 'nullable|string|max:255',
+                'info.*.value' => 'nullable|string|max:500',
+                'infobox_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'references' => 'nullable|array',
+                'references.*.title' => 'nullable|string|max:500',
+                'references.*.url' => 'nullable|url|max:1000',
+            ]);
 
-        // Set submission timestamp if submitting for review
-        if ($validated['status'] === Article::STATUS_PENDING) {
-            $validated['submitted_at'] = now();
-        }
+            $validated['created_by'] = auth()->id();
 
-        $validated['draft_reason'] = $this->resolveDraftReasonFromPreset(
-            $validated['status'],
-            $validated['draft_reason_preset'] ?? null
-        );
-        unset($validated['draft_reason_preset']);
+            unset($validated['rejection_active']);
 
-        if ($request->hasFile('infobox_image')) {
-            $path = $request->file('infobox_image')->store('infobox_images', 'public');
-            $validated['infobox_image'] = $path;
-        }
-
-        $infoData = null;
-        if (isset($validated['info'])) {
-            $infoData = array_filter($validated['info'], function ($item) {
-                return ! empty($item['key']) || ! empty($item['value']);
-            });
-            unset($validated['info']);
-        }
-
-        $referencesData = null;
-        if (isset($validated['references'])) {
-            $referencesData = array_filter($validated['references'], function ($item) {
-                return ! empty($item['title']) || ! empty($item['url']);
-            });
-            // JSON encode the references or set to null if empty
-            $validated['references'] = ! empty($referencesData) ? json_encode(array_values($referencesData)) : null;
-        }
-
-        $article = Article::create($validated);
-
-        if ($infoData) {
-            foreach ($infoData as $item) {
-                ArticleAttribute::create([
-                    'article_id' => $article->id,
-                    'key' => $item['key'],
-                    'value' => $item['value'],
-                ]);
+            if ($validated['status'] === 'pending') {
+                $validated['submitted_at'] = now();
+                $validated['rejection_reason'] = null;
+            } else {
+                $validated['rejection_reason'] = $this->mergeRejectionReasonsFromRequest($request);
             }
-        }
 
-        return redirect()->route('articles.show', $article->slug)
-            ->with('success', 'Article created successfully!');
+            // Draft reason
+            if ($validated['status'] === 'draft') {
+                $validated['draft_reason'] = $this->resolveDraftReasonFromPreset(
+                    $validated['status'],
+                    $validated['draft_reason_preset'] ?? null
+                );
+            }
+            unset($validated['draft_reason_preset']);
+
+            // File upload
+            if ($request->hasFile('infobox_image') && $request->file('infobox_image')->isValid()) {
+                try {
+                    $validated['infobox_image'] = $request->file('infobox_image')
+                        ->store('infobox_images', 'public');
+                } catch (\Exception $e) {
+                    Log::error('Image upload failed', ['error' => $e->getMessage()]);
+
+                    return back()
+                        ->withInput()
+                        ->withErrors(['infobox_image' => 'Image upload failed. Please try again.']);
+                }
+            }
+
+            // Info data
+            $infoData = null;
+            if (isset($validated['info'])) {
+                $infoData = array_filter($validated['info'], function ($item) {
+                    return ! empty($item['key']) && ! empty($item['value']);
+                });
+                unset($validated['info']);
+            }
+
+            // References
+            if (isset($validated['references'])) {
+                $referencesData = array_filter($validated['references'], function ($item) {
+                    return ! empty($item['title']) && ! empty($item['url']);
+                });
+
+                $validated['references'] = ! empty($referencesData)
+                    ? array_values($referencesData)
+                    : null;
+            }
+
+            DB::beginTransaction();
+
+            $article = Article::create($validated);
+
+            // Insert attributes
+            if ($infoData) {
+                $attributes = [];
+
+                foreach ($infoData as $item) {
+                    $attributes[] = [
+                        'article_id' => $article->id,
+                        'key' => $item['key'],
+                        'value' => $item['value'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                ArticleAttribute::insert($attributes);
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('articles.show', $article->slug)
+                ->with('success', 'Article created successfully!');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Laravel automatically handles this, but keeping for clarity
+            throw $e;
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Article creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Something went wrong while creating the article.');
+        }
     }
 
     public function edit(string $slug): View
@@ -186,11 +241,10 @@ class ArticleWebController extends Controller
 
     public function update(Request $request, string $slug): RedirectResponse
     {
-        $article = Article::where('slug', $slug)->firstOrFail();
 
+        $article = Article::where('slug', $slug)->firstOrFail();
         $user = auth()->user();
 
-        // Admin and moderator can edit any article, regular users can only edit their own
         if (! in_array($user->role, ['admin', 'moderator']) && $user->id !== $article->created_by) {
             abort(403, 'You can only edit your own articles.');
         }
@@ -200,6 +254,10 @@ class ArticleWebController extends Controller
             'content' => 'required|string',
             'summary' => 'required|string|max:500',
             'status' => 'required|in:draft,pending,published,rejected',
+            'rejection_reason' => 'nullable|array',
+            'rejection_reason.*' => 'nullable|string|max:500',
+            'rejection_active' => 'nullable|array',
+            'rejection_active.*' => 'nullable|in:1',
             'draft_reason_preset' => ['nullable', 'string', Rule::in(array_keys(config('article.draft_reason_presets', [])))],
             'show_lock_icon' => 'nullable|boolean',
             'info' => 'nullable|array',
@@ -212,14 +270,16 @@ class ArticleWebController extends Controller
             'references.*.url' => 'nullable|url|max:1000',
         ]);
 
-        // Handle status change
         $oldStatus = $article->status;
         $newStatus = $validated['status'];
 
-        // If changing from draft/rejected to pending, set submitted_at
+        unset($validated['rejection_active']);
+
         if (in_array($oldStatus, ['draft', 'rejected']) && $newStatus === 'pending') {
             $validated['submitted_at'] = now();
             $validated['rejection_reason'] = null;
+        } else {
+            $validated['rejection_reason'] = $this->mergeRejectionReasonsFromRequest($request);
         }
 
         $validated['draft_reason'] = $this->resolveDraftReasonFromPreset(
@@ -228,10 +288,12 @@ class ArticleWebController extends Controller
         );
         unset($validated['draft_reason_preset']);
 
+        // Image logic
         if ($request->has('remove_image') && $article->infobox_image) {
             Storage::disk('public')->delete($article->infobox_image);
             $validated['infobox_image'] = null;
         }
+        unset($validated['remove_image']);
 
         if ($request->hasFile('infobox_image')) {
             if ($article->infobox_image) {
@@ -241,26 +303,26 @@ class ArticleWebController extends Controller
             $validated['infobox_image'] = $path;
         }
 
+        // Info Data
         $infoData = null;
         if (isset($validated['info'])) {
             $infoData = array_filter($validated['info'], function ($item) {
                 return ! empty($item['key']) || ! empty($item['value']);
             });
             unset($validated['info']);
-            unset($validated['remove_image']);
         }
 
-        $referencesData = null;
+        // References
         if (isset($validated['references'])) {
             $referencesData = array_filter($validated['references'], function ($item) {
                 return ! empty($item['title']) || ! empty($item['url']);
             });
-            // JSON encode the references or set to null if empty
             $validated['references'] = ! empty($referencesData) ? json_encode(array_values($referencesData)) : null;
         }
 
         $article->update($validated);
 
+        // Sync attributes
         $article->attributes()->delete();
         if ($infoData) {
             foreach ($infoData as $item) {
@@ -356,7 +418,7 @@ class ArticleWebController extends Controller
         $article->update([
             'status' => Article::STATUS_REJECTED,
             'reviewed_by' => auth()->id(),
-            'rejection_reason' => $validated['rejection_reason'],
+            'rejection_reason' => [trim($validated['rejection_reason'])],
             'published_at' => null,
         ]);
 
@@ -371,11 +433,16 @@ class ArticleWebController extends Controller
         $article->title = $request->input('title');
         $article->content = $request->input('content');
         $article->summary = $request->input('summary');
-        $article->status = 'draft';
+        $article->status = $request->input('status', 'draft'); // Dynamic status for preview
+
+        // Draft reason logic
         $article->draft_reason = $this->resolveDraftReasonFromPreset(
-            Article::STATUS_DRAFT,
+            $article->status,
             $request->input('draft_reason_preset')
         );
+
+        $article->rejection_reason = $this->mergeRejectionReasonsFromRequest($request) ?? [];
+
         $article->show_lock_icon = $request->input('show_lock_icon', false);
         $article->created_by = auth()->id();
         $article->created_at = now();
@@ -385,18 +452,17 @@ class ArticleWebController extends Controller
             $path = $request->file('infobox_image')->store('infobox_images', 'public');
             $article->infobox_image = $path;
         } elseif ($request->input('existing_infobox_image')) {
-            // Use existing image path if provided (for edit preview)
             $article->infobox_image = $request->input('existing_infobox_image');
         }
 
-        // Parse references from JSON string if provided
+        // Parse references
         $references = $request->input('references');
         if (is_string($references)) {
             $references = json_decode($references, true);
         }
         $article->references = $references ?: [];
 
-        // Set creator relationship
+        // Set relations
         $article->setRelation('creator', auth()->user());
 
         // Parse and set attributes (info fields)
@@ -439,6 +505,36 @@ class ArticleWebController extends Controller
         }
 
         return response()->json(['error' => 'No image uploaded'], 400);
+    }
+
+    /**
+     * Build stored rejection reasons: only rows where rejection_active[i] is checked ("1") and text is non-empty.
+     *
+     * @return array<int, string>|null
+     */
+    protected function mergeRejectionReasonsFromRequest(Request $request): ?array
+    {
+        $reasons = $request->input('rejection_reason', []);
+        if (! is_array($reasons)) {
+            $reasons = [];
+        }
+        $active = $request->input('rejection_active', []);
+        if (! is_array($active)) {
+            $active = [];
+        }
+
+        $merged = [];
+        for ($i = 0; $i < 4; $i++) {
+            if (! isset($active[$i]) || (string) $active[$i] !== '1') {
+                continue;
+            }
+            $text = isset($reasons[$i]) ? trim((string) $reasons[$i]) : '';
+            if ($text !== '') {
+                $merged[] = $text;
+            }
+        }
+
+        return $merged === [] ? null : $merged;
     }
 
     protected function resolveDraftReasonFromPreset(?string $status, ?string $presetKey): ?string

@@ -12,7 +12,7 @@ class ArticleController extends Controller
 {
     public function index(Request $request): View
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -29,7 +29,7 @@ class ArticleController extends Controller
         }
 
         // Search with semantic full-text search
-        if ($request->has('search') && !empty($request->get('search'))) {
+        if ($request->has('search') && ! empty($request->get('search'))) {
             $searchTerm = $request->get('search');
             $query->search($searchTerm);
         } else {
@@ -60,7 +60,7 @@ class ArticleController extends Controller
 
     public function approve(string $slug)
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -77,7 +77,7 @@ class ArticleController extends Controller
         if (request()->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Article approved and published successfully!'
+                'message' => 'Article approved and published successfully!',
             ]);
         }
 
@@ -86,7 +86,7 @@ class ArticleController extends Controller
 
     public function reject(Request $request, string $slug): RedirectResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -99,7 +99,7 @@ class ArticleController extends Controller
         $article->update([
             'status' => Article::STATUS_REJECTED,
             'reviewed_by' => auth()->id(),
-            'rejection_reason' => $validated['rejection_reason'],
+            'rejection_reason' => [trim($validated['rejection_reason'])],
         ]);
 
         return redirect()->back()->with('success', 'Article rejected successfully!');
@@ -107,7 +107,7 @@ class ArticleController extends Controller
 
     public function destroy(string $slug): RedirectResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -119,7 +119,7 @@ class ArticleController extends Controller
 
     public function restore($id): RedirectResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Unauthorized access.');
         }
 
@@ -131,7 +131,7 @@ class ArticleController extends Controller
 
     public function forceDelete($id): RedirectResponse
     {
-        if (!in_array(auth()->user()->role, ['admin', 'moderator'])) {
+        if (! in_array(auth()->user()->role, ['admin', 'moderator'])) {
             abort(403, 'Unauthorized access.');
         }
 

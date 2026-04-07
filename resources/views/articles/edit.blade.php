@@ -72,6 +72,12 @@
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                         <option value="draft" {{ old('status', $article->status) === 'draft' ? 'selected' : '' }}>Save as Draft</option>
                                         <option value="pending" {{ old('status', $article->status) === 'pending' ? 'selected' : '' }}>Submit for Review</option>
+                                        @if($article->status === 'rejected')
+                                            <option value="rejected" {{ old('status', $article->status) === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                        @endif
+                                        @if(in_array(auth()->user()->role, ['admin', 'moderator']) && $article->status === 'published')
+                                            <option value="published" {{ old('status', $article->status) === 'published' ? 'selected' : '' }}>Published</option>
+                                        @endif
                                     </select>
                                 </div>
 
@@ -656,6 +662,36 @@
                 lockIconInput.name = 'show_lock_icon';
                 lockIconInput.value = '1';
                 form.appendChild(lockIconInput);
+            }
+
+            // Status (draft / pending / rejected / published) for accurate preview
+            var statusSelect = document.querySelector('#status');
+            if (statusSelect && statusSelect.value) {
+                var statusInput = document.createElement('input');
+                statusInput.type = 'hidden';
+                statusInput.name = 'status';
+                statusInput.value = statusSelect.value;
+                form.appendChild(statusInput);
+            }
+
+            // Rejection reasons + “show on article” checkboxes (same as main form)
+            for (var ri = 0; ri < 4; ri++) {
+                var reasonEl = document.querySelector('input[name="rejection_reason[' + ri + ']"]');
+                if (reasonEl) {
+                    var rIn = document.createElement('input');
+                    rIn.type = 'hidden';
+                    rIn.name = 'rejection_reason[' + ri + ']';
+                    rIn.value = reasonEl.value || '';
+                    form.appendChild(rIn);
+                }
+                var activeEl = document.querySelector('input[type="checkbox"][name="rejection_active[' + ri + ']"]');
+                if (activeEl && activeEl.checked) {
+                    var aIn = document.createElement('input');
+                    aIn.type = 'hidden';
+                    aIn.name = 'rejection_active[' + ri + ']';
+                    aIn.value = '1';
+                    form.appendChild(aIn);
+                }
             }
 
             // Add info fields

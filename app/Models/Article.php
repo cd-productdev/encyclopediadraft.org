@@ -10,7 +10,6 @@ class Article extends Model
 {
     use SoftDeletes;
 
-    // Status constants
     const STATUS_DRAFT = 'draft';
 
     const STATUS_PENDING = 'pending';
@@ -32,6 +31,7 @@ class Article extends Model
             'show_lock_icon' => 'boolean',
             'submitted_at' => 'datetime',
             'published_at' => 'datetime',
+            'rejection_reason' => 'array',
         ];
     }
 
@@ -44,14 +44,13 @@ class Article extends Model
 
         static::creating(function ($article) {
             if (empty($article->slug)) {
-                // Generate short unique base64-encoded slug (similar to MjcxMw==)
-                // Use article ID if available, otherwise use random number + timestamp
                 $uniqueNumber = time().mt_rand(1000, 9999);
                 $article->slug = rtrim(base64_encode($uniqueNumber), '=');
             }
         });
 
         static::updating(function ($article) {
+            // Title change par slug update ka logic yahan hai
             if ($article->isDirty('title') && empty($article->slug)) {
                 $uniqueNumber = time().mt_rand(1000, 9999);
                 $article->slug = rtrim(base64_encode($uniqueNumber), '=');
