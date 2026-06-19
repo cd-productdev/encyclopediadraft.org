@@ -145,8 +145,9 @@
                         <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                             <tr>
                                 <th class="px-4 py-4 text-left">
-                                    <label class="inline-flex items-center cursor-pointer">
+                                    <label for="select-all-users" class="inline-flex items-center gap-2 cursor-pointer select-none">
                                         <input type="checkbox" id="select-all-users" class="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Select All</span>
                                     </label>
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">User</th>

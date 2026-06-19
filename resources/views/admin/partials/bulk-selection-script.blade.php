@@ -2,11 +2,11 @@
     function initBulkSelection(config) {
         const selectAll = document.getElementById(config.selectAllId);
         const checkboxes = Array.from(document.querySelectorAll(config.checkboxSelector));
-        const toolbar = document.getElementById(config.toolbarId);
-        const countLabel = document.getElementById(config.countId);
-        const submitButton = document.getElementById(config.submitId);
+        const toolbar = config.toolbarId ? document.getElementById(config.toolbarId) : null;
+        const countLabel = config.countId ? document.getElementById(config.countId) : null;
+        const submitButton = config.submitId ? document.getElementById(config.submitId) : null;
 
-        if (!toolbar || checkboxes.length === 0) {
+        if (checkboxes.length === 0) {
             return;
         }
 
@@ -15,7 +15,9 @@
             const selected = enabledCheckboxes.filter((checkbox) => checkbox.checked);
             const count = selected.length;
 
-            toolbar.classList.toggle('hidden', count === 0);
+            if (toolbar) {
+                toolbar.classList.toggle('hidden', count === 0);
+            }
 
             if (countLabel) {
                 countLabel.textContent = `${count} selected`;

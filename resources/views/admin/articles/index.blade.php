@@ -123,12 +123,15 @@
                     <input type="hidden" name="permanent" value="{{ request('trashed') === 'true' ? '1' : '0' }}">
                 </form>
 
-                <div id="bulk-articles-toolbar" class="hidden mb-4 bg-white rounded-xl shadow-md border border-red-100 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex items-center gap-3">
+                <div class="mb-4 bg-white rounded-xl shadow-md border border-gray-100 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                    <label for="select-all-articles" class="inline-flex items-center gap-2 cursor-pointer select-none">
                         <input type="checkbox" id="select-all-articles" class="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer">
-                        <label for="select-all-articles" class="text-sm font-semibold text-gray-700">Select all on this page</label>
-                        <span id="bulk-articles-count" class="text-sm text-gray-500">0 selected</span>
-                    </div>
+                        <span class="text-sm font-semibold text-gray-700">Select all on this page</span>
+                    </label>
+                    <span id="bulk-articles-count" class="text-sm text-gray-500">0 selected</span>
+                </div>
+
+                <div id="bulk-articles-toolbar" class="hidden mb-4 bg-white rounded-xl shadow-md border border-red-100 px-4 py-3 flex flex-wrap items-center justify-end gap-3">
                     <button
                         type="submit"
                         id="bulk-articles-submit"
