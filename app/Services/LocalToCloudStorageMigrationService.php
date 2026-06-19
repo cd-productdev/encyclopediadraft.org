@@ -7,6 +7,8 @@ use App\Models\Upload;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use League\Flysystem\UnableToCheckFileExistence;
+use Throwable;
 
 class LocalToCloudStorageMigrationService
 {
@@ -56,7 +58,7 @@ class LocalToCloudStorageMigrationService
 
         foreach ($this->collectLocalFiles($localDisk) as $path) {
             try {
-                if ($remoteDisk->exists($path)) {
+                if ($this->safeExists($remoteDisk, $path)) {
                     $stats['skipped']++;
 
                     if ($deleteLocal && $localDisk->exists($path)) {
@@ -120,7 +122,7 @@ class LocalToCloudStorageMigrationService
 
         foreach ($this->collectLocalFiles($localDisk) as $path) {
             try {
-                if (! $remoteDisk->exists($path)) {
+                if (! $this->safeExists($remoteDisk, $path)) {
                     $stats['skipped']++;
 
                     continue;
@@ -260,5 +262,14 @@ class LocalToCloudStorageMigrationService
         sort($paths);
 
         return array_values(array_unique($paths));
+    }
+
+    protected function safeExists(Filesystem $disk, string $path): bool
+    {
+        try {
+            return $disk->exists($path);
+        } catch (UnableToCheckFileExistence|Throwable) {
+            return false;
+        }
     }
 }

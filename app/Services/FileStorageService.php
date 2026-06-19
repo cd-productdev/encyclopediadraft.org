@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\UnableToCheckFileExistence;
+use Throwable;
 
 class FileStorageService
 {
@@ -34,7 +37,11 @@ class FileStorageService
 
         $normalizedPath = ltrim($path, '/');
 
-        return $this->resolveDiskForPath($normalizedPath)->url($normalizedPath);
+        if ($this->disk() !== 'public' && $this->safeExists(Storage::disk('public'), $normalizedPath)) {
+            return Storage::disk('public')->url($normalizedPath);
+        }
+
+        return Storage::disk($this->disk())->url($normalizedPath);
     }
 
     public function exists(string $path): bool
@@ -45,7 +52,8 @@ class FileStorageService
 
         $normalizedPath = ltrim($path, '/');
 
-        return $this->resolveDiskForPath($normalizedPath)->exists($normalizedPath);
+        return $this->safeExists(Storage::disk($this->disk()), $normalizedPath)
+            || ($this->disk() !== 'public' && $this->safeExists(Storage::disk('public'), $normalizedPath));
     }
 
     public function delete(?string $path): void
@@ -55,26 +63,25 @@ class FileStorageService
         }
 
         $normalizedPath = ltrim($path, '/');
-        $disk = $this->resolveDiskForPath($normalizedPath);
 
-        if ($disk->exists($normalizedPath)) {
-            $disk->delete($normalizedPath);
+        if ($this->safeExists(Storage::disk($this->disk()), $normalizedPath)) {
+            Storage::disk($this->disk())->delete($normalizedPath);
+
+            return;
+        }
+
+        if ($this->disk() !== 'public' && $this->safeExists(Storage::disk('public'), $normalizedPath)) {
+            Storage::disk('public')->delete($normalizedPath);
         }
     }
 
-    protected function resolveDiskForPath(string $path)
+    protected function safeExists(Filesystem $disk, string $path): bool
     {
-        $uploadsDisk = Storage::disk($this->disk());
-
-        if ($uploadsDisk->exists($path)) {
-            return $uploadsDisk;
+        try {
+            return $disk->exists($path);
+        } catch (UnableToCheckFileExistence|Throwable) {
+            return false;
         }
-
-        if ($this->disk() !== 'public' && Storage::disk('public')->exists($path)) {
-            return Storage::disk('public');
-        }
-
-        return $uploadsDisk;
     }
 
     protected function isAbsoluteUrl(string $path): bool

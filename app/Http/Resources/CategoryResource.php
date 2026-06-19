@@ -21,8 +21,6 @@ class CategoryResource extends JsonResource
         if ($this->image) {
             if (str_starts_with($this->image, 'http')) {
                 $imageUrl = $this->image;
-            } elseif ($fileStorage->exists($this->image)) {
-                $imageUrl = $fileStorage->url($this->image);
             } elseif ($fileStorage->exists('categories/'.$this->image)) {
                 $imageUrl = $fileStorage->url('categories/'.$this->image);
             } else {
