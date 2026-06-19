@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Web\ArticleWebController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Web\ArticleWebController;
 use Illuminate\Support\Facades\Route;
 
 // Root route - redirect based on authentication
@@ -16,6 +16,7 @@ Route::get('/dashboard', function () {
     if (in_array(auth()->user()?->role, ['admin', 'moderator'])) {
         return redirect()->route('admin.dashboard');
     }
+
     return redirect()->route('articles.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -43,9 +44,6 @@ Route::middleware('auth')->group(function () {
     // Preview route
     Route::post('/articles/preview', [ArticleWebController::class, 'preview'])->name('articles.preview');
 
-
-    
-
     // Image upload for CKEditor
     Route::post('/articles/upload-image', [ArticleWebController::class, 'uploadImage'])->name('articles.upload-image');
 });
@@ -61,6 +59,7 @@ Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
     Route::post('users/{user}/change-password', [UserController::class, 'changePassword'])
         ->withTrashed()
         ->name('users.changePassword');
+    Route::post('users/bulk-destroy', [UserController::class, 'bulkDestroy'])->name('users.bulk-destroy');
     Route::post('users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
     Route::delete('users/{id}/force-delete', [UserController::class, 'forceDelete'])->name('users.forceDelete');
 
@@ -69,6 +68,7 @@ Route::prefix('admin')->middleware('auth')->name('admin.')->group(function () {
 
     // Article management routes
     Route::get('/articles', [\App\Http\Controllers\Admin\ArticleController::class, 'index'])->name('articles.index');
+    Route::post('/articles/bulk-destroy', [\App\Http\Controllers\Admin\ArticleController::class, 'bulkDestroy'])->name('articles.bulk-destroy');
     Route::post('/articles/{article}/approve', [\App\Http\Controllers\Admin\ArticleController::class, 'approve'])->name('articles.approve');
     Route::post('/articles/{article}/reject', [\App\Http\Controllers\Admin\ArticleController::class, 'reject'])->name('articles.reject');
     Route::delete('/articles/{article}', [\App\Http\Controllers\Admin\ArticleController::class, 'destroy'])->name('articles.destroy');

@@ -160,7 +160,9 @@ class LocalToCloudStorageMigrationService
 
             $stats['articles_updated'] = Article::query()
                 ->where(function ($query) use ($baseUrl): void {
-                    $query->where('content', 'like', '%/storage/%');
+                    $query->where('content', 'like', '%/storage/%')
+                        ->orWhere('infobox_image', 'like', '%/storage/%')
+                        ->orWhere('infobox_image', 'like', 'storage/%');
 
                     if ($baseUrl !== '') {
                         $query->orWhere('content', 'like', '%'.$baseUrl.'/%');
@@ -179,10 +181,22 @@ class LocalToCloudStorageMigrationService
             ->orderBy('id')
             ->chunkById(100, function ($articles) use (&$stats): void {
                 foreach ($articles as $article) {
+                    $updates = [];
+
                     $updatedContent = $this->fileStorage->rewriteContentUrls($article->content);
 
                     if ($updatedContent !== $article->content) {
-                        $article->update(['content' => $updatedContent]);
+                        $updates['content'] = $updatedContent;
+                    }
+
+                    $normalizedInfoboxImage = $this->fileStorage->normalizeStoredPath($article->infobox_image);
+
+                    if ($normalizedInfoboxImage !== $article->infobox_image) {
+                        $updates['infobox_image'] = $normalizedInfoboxImage;
+                    }
+
+                    if ($updates !== []) {
+                        $article->update($updates);
                         $stats['articles_updated']++;
                     }
                 }

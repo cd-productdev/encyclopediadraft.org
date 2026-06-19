@@ -37,11 +37,28 @@ class FileStorageService
 
         $normalizedPath = $this->normalizeStoragePath($path);
 
-        if ($this->disk() !== 'public' && $this->safeExists(Storage::disk('public'), $normalizedPath)) {
+        if ($this->disk() === 'public') {
             return Storage::disk('public')->url($normalizedPath);
         }
 
         return $this->buildPublicUrl($normalizedPath);
+    }
+
+    public function normalizeStoredPath(?string $path): ?string
+    {
+        if ($path === null || $path === '') {
+            return null;
+        }
+
+        if ($this->isAbsoluteUrl($path)) {
+            if (preg_match('~/storage/([^"\'\s<>]+)~', $path, $matches) === 1) {
+                return $this->normalizeStoragePath(urldecode($matches[1]));
+            }
+
+            return $path;
+        }
+
+        return $this->normalizeStoragePath($path);
     }
 
     public function rewriteContentUrls(?string $content): ?string

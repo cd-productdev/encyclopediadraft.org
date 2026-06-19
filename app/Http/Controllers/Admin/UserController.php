@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\BulkDeleteUsersRequest;
 use App\Mail\AccountCreatedMail;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -194,5 +195,52 @@ class UserController extends Controller
             'success' => true,
             'message' => 'Password changed successfully for '.$user->name.'!',
         ]);
+    }
+
+    public function bulkDestroy(BulkDeleteUsersRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+        $permanent = $request->boolean('permanent');
+
+        $ids = collect($validated['ids'])
+            ->map(fn ($id): int => (int) $id)
+            ->reject(fn (int $id): bool => $id === auth()->id())
+            ->values()
+            ->all();
+
+        if ($ids === []) {
+            return redirect()->back()->with('error', 'You cannot delete your own account.');
+        }
+
+        $query = $permanent
+            ? User::onlyTrashed()
+            : User::query();
+
+        $users = $query
+            ->whereIn('id', $ids)
+            ->get();
+
+        $deletedCount = 0;
+        $skippedSelf = count($validated['ids']) !== count($ids);
+
+        foreach ($users as $user) {
+            if ($permanent) {
+                $user->forceDelete();
+            } else {
+                $user->delete();
+            }
+
+            $deletedCount++;
+        }
+
+        $message = $permanent
+            ? "{$deletedCount} user(s) permanently deleted."
+            : "{$deletedCount} user(s) moved to trash.";
+
+        if ($skippedSelf) {
+            $message .= ' Your own account was skipped.';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 }

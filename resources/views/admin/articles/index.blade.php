@@ -33,6 +33,23 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div class="mb-6 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 text-red-800 px-6 py-4 rounded-r-lg shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="font-medium">{{ session('error') }}</span>
+                    </div>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="mb-6 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 text-red-800 px-6 py-4 rounded-r-lg shadow-sm">
+                    <span class="font-medium">{{ $errors->first() }}</span>
+                </div>
+            @endif
+
             <!-- Statistics Cards -->
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
                 <div class="bg-white rounded-lg shadow-md border border-gray-200 p-4">
@@ -101,13 +118,51 @@
 
             <!-- Articles Grid -->
             @if($articles->count() > 0)
+                <form id="bulk-delete-articles-form" method="POST" action="{{ route('admin.articles.bulk-destroy') }}">
+                    @csrf
+                    <input type="hidden" name="permanent" value="{{ request('trashed') === 'true' ? '1' : '0' }}">
+                </form>
+
+                <div id="bulk-articles-toolbar" class="hidden mb-4 bg-white rounded-xl shadow-md border border-red-100 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" id="select-all-articles" class="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                        <label for="select-all-articles" class="text-sm font-semibold text-gray-700">Select all on this page</label>
+                        <span id="bulk-articles-count" class="text-sm text-gray-500">0 selected</span>
+                    </div>
+                    <button
+                        type="submit"
+                        id="bulk-articles-submit"
+                        form="bulk-delete-articles-form"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                    >
+                        {{ request('trashed') === 'true' ? 'Delete Selected Forever' : 'Trash Selected' }}
+                    </button>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     @foreach($articles as $article)
                         <div class="group bg-white rounded-xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden transition-all duration-300">
+                            <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50">
+                                <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        name="ids[]"
+                                        value="{{ $article->id }}"
+                                        form="bulk-delete-articles-form"
+                                        class="article-bulk-checkbox w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                                    >
+                                    <span class="text-xs font-semibold text-gray-600">Select</span>
+                                </label>
+
+                                @if($article->trashed())
+                                    <span class="px-2 py-1 text-xs font-bold rounded-full bg-gray-800 text-white">Trashed</span>
+                                @endif
+                            </div>
+
                             <!-- Article Header -->
                             <div class="h-32 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
                                 @if($article->infobox_image)
-                                    <img src="{{ storageUrl($article->infobox_image) }}" alt="{{ $article->title }}" class="w-full h-full object-cover opacity-90">
+                                    <img src="{{ storageUrl($article->infobox_image) }}" alt="{{ $article->title }}" class="w-full h-full object-cover opacity-90 pointer-events-none">
                                 @else
                                     <div class="absolute inset-0 flex items-center justify-center">
                                         <svg class="w-12 h-12 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,12 +183,6 @@
                                         <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-500 text-white">Rejected</span>
                                     @endif
                                 </div>
-
-                                @if($article->trashed())
-                                    <div class="absolute top-2 left-2">
-                                        <span class="px-2 py-1 text-xs font-bold rounded-full bg-black bg-opacity-70 text-white">Trashed</span>
-                                    </div>
-                                @endif
                             </div>
 
                             <!-- Article Content -->
@@ -255,6 +304,8 @@
         </div>
     </div>
 
+    @include('admin.partials.bulk-selection-script')
+
     <script>
         function openRejectModal(slug, title) {
             document.getElementById('rejectForm').action = `/admin/articles/${slug}/reject`;
@@ -271,6 +322,15 @@
             if (event.key === 'Escape') {
                 closeRejectModal();
             }
+        });
+
+        initBulkSelection({
+            selectAllId: 'select-all-articles',
+            checkboxSelector: '.article-bulk-checkbox',
+            toolbarId: 'bulk-articles-toolbar',
+            countId: 'bulk-articles-count',
+            submitId: 'bulk-articles-submit',
+            confirmMessage: @json(request('trashed') === 'true' ? 'Permanently delete :count selected article(s)? This cannot be undone.' : 'Move :count selected article(s) to trash?'),
         });
     </script>
 </x-app-layout>

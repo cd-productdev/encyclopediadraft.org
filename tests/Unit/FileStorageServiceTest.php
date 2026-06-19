@@ -85,4 +85,34 @@ class FileStorageServiceTest extends TestCase
 
         $this->assertStringContainsString('https://example-spaces.test/draft/article_images/photo.jpg', $updated);
     }
+
+    public function test_url_uses_remote_disk_even_when_local_copy_exists(): void
+    {
+        config([
+            'filesystems.uploads_disk' => 's3',
+            'filesystems.disks.s3.url' => 'https://example-spaces.test',
+            'filesystems.disks.s3.root' => 'draft',
+        ]);
+        Storage::fake('public');
+        Storage::fake('s3');
+
+        Storage::disk('public')->put('infobox_images/photo.jpg', 'local-copy');
+
+        $service = app(FileStorageService::class);
+
+        $this->assertSame(
+            'https://example-spaces.test/draft/infobox_images/photo.jpg',
+            $service->url('infobox_images/photo.jpg')
+        );
+    }
+
+    public function test_normalize_stored_path_converts_legacy_public_url_to_relative_path(): void
+    {
+        $service = app(FileStorageService::class);
+
+        $this->assertSame(
+            'infobox_images/photo.jpg',
+            $service->normalizeStoredPath('https://encyclopediadraft.org/storage/infobox_images/photo.jpg')
+        );
+    }
 }

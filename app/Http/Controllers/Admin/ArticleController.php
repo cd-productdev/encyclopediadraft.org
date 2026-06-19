@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\BulkDeleteArticlesRequest;
 use App\Models\Article;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -139,5 +140,37 @@ class ArticleController extends Controller
         $article->forceDelete();
 
         return redirect()->back()->with('success', 'Article permanently deleted!');
+    }
+
+    public function bulkDestroy(BulkDeleteArticlesRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+        $permanent = $request->boolean('permanent');
+
+        $query = $permanent
+            ? Article::onlyTrashed()
+            : Article::query();
+
+        $articles = $query
+            ->whereIn('id', $validated['ids'])
+            ->get();
+
+        $deletedCount = 0;
+
+        foreach ($articles as $article) {
+            if ($permanent) {
+                $article->forceDelete();
+            } else {
+                $article->delete();
+            }
+
+            $deletedCount++;
+        }
+
+        $message = $permanent
+            ? "{$deletedCount} article(s) permanently deleted."
+            : "{$deletedCount} article(s) moved to trash.";
+
+        return redirect()->back()->with('success', $message);
     }
 }

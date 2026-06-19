@@ -49,6 +49,12 @@
                 </div>
             @endif
 
+            @if($errors->any())
+                <div class="mb-6 bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 text-red-800 px-6 py-4 rounded-r-lg shadow-sm">
+                    <span class="font-medium">{{ $errors->first() }}</span>
+                </div>
+            @endif
+
             <!-- Statistics Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
@@ -114,11 +120,35 @@
             </div>
 
             <!-- Users Table -->
+            <form id="bulk-delete-users-form" method="POST" action="{{ route('admin.users.bulk-destroy') }}">
+                @csrf
+                <input type="hidden" name="permanent" value="{{ request('trashed') === 'true' ? '1' : '0' }}">
+            </form>
+
+            <div id="bulk-users-toolbar" class="hidden mb-4 bg-white rounded-xl shadow-md border border-red-100 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <span id="bulk-users-count" class="text-sm text-gray-500">0 selected</span>
+                </div>
+                <button
+                    type="submit"
+                    id="bulk-users-submit"
+                    form="bulk-delete-users-form"
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                    {{ request('trashed') === 'true' ? 'Delete Selected Forever' : 'Trash Selected' }}
+                </button>
+            </div>
+
             <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                             <tr>
+                                <th class="px-4 py-4 text-left">
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="select-all-users" class="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                                    </label>
+                                </th>
                                 <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">User</th>
                                 <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Email</th>
                                 <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Role</th>
@@ -129,6 +159,19 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($users as $user)
                                 <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-4 py-4">
+                                        <label class="inline-flex items-center {{ $user->id === auth()->id() && ! $user->trashed() ? 'cursor-not-allowed opacity-40' : 'cursor-pointer' }}">
+                                            <input
+                                                type="checkbox"
+                                                name="ids[]"
+                                                value="{{ $user->id }}"
+                                                form="bulk-delete-users-form"
+                                                class="user-bulk-checkbox w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 {{ $user->id === auth()->id() && ! $user->trashed() ? 'cursor-not-allowed' : 'cursor-pointer' }}"
+                                                @disabled($user->id === auth()->id() && ! $user->trashed())
+                                                title="{{ $user->id === auth()->id() && ! $user->trashed() ? 'You cannot delete your own account' : 'Select user' }}"
+                                            >
+                                        </label>
+                                    </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
                                             <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
@@ -198,7 +241,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center">
+                                    <td colspan="6" class="px-6 py-12 text-center">
                                         <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                                         </svg>
@@ -265,6 +308,8 @@
         </div>
     </div>
 
+    @include('admin.partials.bulk-selection-script')
+
     <script>
         function openPasswordModal(userId, userName) {
             document.getElementById('userId').value = userId;
@@ -328,6 +373,15 @@
             if (event.key === 'Escape') {
                 closePasswordModal();
             }
+        });
+
+        initBulkSelection({
+            selectAllId: 'select-all-users',
+            checkboxSelector: '.user-bulk-checkbox',
+            toolbarId: 'bulk-users-toolbar',
+            countId: 'bulk-users-count',
+            submitId: 'bulk-users-submit',
+            confirmMessage: @json(request('trashed') === 'true' ? 'Permanently delete :count selected user(s)? This cannot be undone.' : 'Move :count selected user(s) to trash?'),
         });
     </script>
 </x-app-layout>
