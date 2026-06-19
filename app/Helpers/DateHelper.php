@@ -197,7 +197,6 @@ class DateHelper
             return null;
         }
 
-        // Validate extension (very important for security)
         $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
         $extension = strtolower($file->getClientOriginalExtension());
 
@@ -205,18 +204,9 @@ class DateHelper
             return null;
         }
 
-        // Ensure directory exists
-        $storagePath = storage_path("app/public/{$directory}");
-        if (! file_exists($storagePath)) {
-            mkdir($storagePath, 0775, true);
-        }
-
-        // Generate unique filename
         $filename = uniqid().'_'.time().'.'.$extension;
 
-        // Move the file
-        $file->move($storagePath, $filename);
-
-        return "{$directory}/{$filename}";
+        return app(\App\Services\FileStorageService::class)
+            ->storeAs($file, $directory, $filename);
     }
 }

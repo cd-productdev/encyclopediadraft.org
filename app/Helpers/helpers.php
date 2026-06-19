@@ -1,6 +1,7 @@
 <?php
 
 use App\Helpers\DateHelper;
+use App\Services\FileStorageService;
 
 if (! function_exists('formatDate')) {
     /**
@@ -119,6 +120,26 @@ if (! function_exists('formatTime12Hour')) {
     function formatTime12Hour($dateTime): ?string
     {
         return DateHelper::formatTime12Hour($dateTime);
+    }
+}
+
+if (! function_exists('uploadsDisk')) {
+    /**
+     * Get the configured disk name for user uploads.
+     */
+    function uploadsDisk(): string
+    {
+        return app(FileStorageService::class)->disk();
+    }
+}
+
+if (! function_exists('storageUrl')) {
+    /**
+     * Resolve a stored file path to a public URL.
+     */
+    function storageUrl(?string $path): ?string
+    {
+        return app(FileStorageService::class)->url($path);
     }
 }
 

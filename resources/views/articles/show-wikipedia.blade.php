@@ -402,7 +402,7 @@
                                             <div class="person-box">
                                                 @if($article->infobox_image)
                                                     <div class="person-img">
-                                                        <img src="{{ Storage::url($article->infobox_image) }}" class="img-fluid thumb" alt="{{ $article->title }}" />
+                                                        <img src="{{ storageUrl($article->infobox_image) }}" class="img-fluid thumb" alt="{{ $article->title }}" />
                                                     </div>
                                                 @endif
 

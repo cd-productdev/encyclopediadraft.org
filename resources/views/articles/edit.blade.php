@@ -157,7 +157,7 @@
 
                                         @if($article->infobox_image)
                                             <div class="mb-2">
-                                                <img src="{{ Storage::url($article->infobox_image) }}" alt="Current image" class="w-full h-auto rounded-lg mb-2">
+                                                <img src="{{ storageUrl($article->infobox_image) }}" alt="Current image" class="w-full h-auto rounded-lg mb-2">
                                                 <label class="flex items-center gap-2">
                                                     <input type="checkbox" name="remove_image" value="1" class="rounded">
                                                     <span class="text-sm text-red-600">Remove current image</span>

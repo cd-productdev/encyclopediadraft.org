@@ -107,7 +107,7 @@
                             <!-- Article Header -->
                             <div class="h-32 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 relative overflow-hidden">
                                 @if($article->infobox_image)
-                                    <img src="{{ Storage::url($article->infobox_image) }}" alt="{{ $article->title }}" class="w-full h-full object-cover opacity-90">
+                                    <img src="{{ storageUrl($article->infobox_image) }}" alt="{{ $article->title }}" class="w-full h-full object-cover opacity-90">
                                 @else
                                     <div class="absolute inset-0 flex items-center justify-center">
                                         <svg class="w-12 h-12 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">

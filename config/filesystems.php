@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Uploads Disk
+    |--------------------------------------------------------------------------
+    |
+    | Disk used for user-uploaded files such as article and infobox images.
+    | Set FILESYSTEM_UPLOAD_DISK=s3 (or UPLOADS_DISK=s3) to store files in S3/Spaces.
+    |
+    */
+
+    'uploads_disk' => env('FILESYSTEM_UPLOAD_DISK', env('UPLOADS_DISK', 's3')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -34,7 +46,7 @@ return [
             'driver' => 'local',
             'root' => storage_path('app/private'),
             'serve' => true,
-            'throw' => false,
+            'throw' => env('FILESYSTEM_THROW', false),
             'report' => false,
         ],
 
@@ -43,7 +55,7 @@ return [
             'root' => storage_path('app/public'),
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
-            'throw' => false,
+            'throw' => env('FILESYSTEM_THROW', false),
             'report' => false,
         ],
 
@@ -56,7 +68,9 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
+            'root' => env('AWS_ROOT'),
+            'visibility' => 'public',
+            'throw' => env('FILESYSTEM_THROW', false),
             'report' => false,
         ],
 

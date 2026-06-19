@@ -5,18 +5,20 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\ArticleAttribute;
+use App\Services\FileStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ArticleWebController extends Controller
 {
+    public function __construct(protected FileStorageService $fileStorage) {}
+
     public function index(Request $request): View
     {
         $user = auth()->user();
@@ -150,8 +152,8 @@ class ArticleWebController extends Controller
             // File upload
             if ($request->hasFile('infobox_image') && $request->file('infobox_image')->isValid()) {
                 try {
-                    $validated['infobox_image'] = $request->file('infobox_image')
-                        ->store('infobox_images', 'public');
+                    $validated['infobox_image'] = $this->fileStorage
+                        ->store($request->file('infobox_image'), 'infobox_images');
                 } catch (\Exception $e) {
                     Log::error('Image upload failed', ['error' => $e->getMessage()]);
 
@@ -290,17 +292,17 @@ class ArticleWebController extends Controller
 
         // Image logic
         if ($request->has('remove_image') && $article->infobox_image) {
-            Storage::disk('public')->delete($article->infobox_image);
+            $this->fileStorage->delete($article->infobox_image);
             $validated['infobox_image'] = null;
         }
         unset($validated['remove_image']);
 
         if ($request->hasFile('infobox_image')) {
             if ($article->infobox_image) {
-                Storage::disk('public')->delete($article->infobox_image);
+                $this->fileStorage->delete($article->infobox_image);
             }
-            $path = $request->file('infobox_image')->store('infobox_images', 'public');
-            $validated['infobox_image'] = $path;
+            $validated['infobox_image'] = $this->fileStorage
+                ->store($request->file('infobox_image'), 'infobox_images');
         }
 
         // Info Data
@@ -449,8 +451,8 @@ class ArticleWebController extends Controller
 
         // Handle infobox image upload for preview
         if ($request->hasFile('infobox_image')) {
-            $path = $request->file('infobox_image')->store('infobox_images', 'public');
-            $article->infobox_image = $path;
+            $article->infobox_image = $this->fileStorage
+                ->store($request->file('infobox_image'), 'infobox_images');
         } elseif ($request->input('existing_infobox_image')) {
             $article->infobox_image = $request->input('existing_infobox_image');
         }
@@ -497,10 +499,10 @@ class ArticleWebController extends Controller
         if ($request->hasFile('upload')) {
             $image = $request->file('upload');
             $filename = time().'_'.$image->getClientOriginalName();
-            $path = $image->storeAs('article_images', $filename, 'public');
+            $path = $this->fileStorage->storeAs($image, 'article_images', $filename);
 
             return response()->json([
-                'url' => Storage::url($path),
+                'url' => $this->fileStorage->url($path),
             ]);
         }
 
