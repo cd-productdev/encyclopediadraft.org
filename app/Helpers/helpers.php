@@ -143,6 +143,16 @@ if (! function_exists('storageUrl')) {
     }
 }
 
+if (! function_exists('rewriteStorageContentUrls')) {
+    /**
+     * Rewrite legacy /storage/ image URLs in HTML content to the configured remote disk.
+     */
+    function rewriteStorageContentUrls(?string $content): ?string
+    {
+        return app(FileStorageService::class)->rewriteContentUrls($content);
+    }
+}
+
 if (! function_exists('uploadImage')) {
     /**
      * Upload image file

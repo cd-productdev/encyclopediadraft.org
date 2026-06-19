@@ -61,24 +61,4 @@ class LocalToCloudStorageMigrationServiceTest extends TestCase
         Storage::disk('public')->assertExists('images/local-only.jpg');
         Storage::disk('public')->assertMissing('images/shared.jpg');
     }
-
-    public function test_replace_storage_urls_in_content_uses_remote_url(): void
-    {
-        config([
-            'filesystems.uploads_disk' => 's3',
-            'filesystems.disks.s3.url' => 'https://example-spaces.test',
-            'filesystems.disks.s3.root' => '',
-            'app.url' => 'https://app.test',
-        ]);
-        Storage::fake('s3');
-        Storage::disk('s3')->put('article_images/photo.jpg', 'image-data');
-
-        $service = app(LocalToCloudStorageMigrationService::class);
-        $content = '<img src="/storage/article_images/photo.jpg">';
-
-        $updated = $service->replaceStorageUrlsInContent($content);
-
-        $this->assertStringContainsString('https://example-spaces.test/article_images/photo.jpg', $updated);
-        $this->assertStringNotContainsString('/storage/', $updated);
-    }
 }

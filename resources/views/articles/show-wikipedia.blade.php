@@ -392,7 +392,7 @@
                                                 <p><strong>{{ $article->summary }}</strong></p>
                                             @endif
 
-                                            {!! $article->content !!}
+                                            {!! rewriteStorageContentUrls($article->content) !!}
                                         </div>
                                     </div>
 

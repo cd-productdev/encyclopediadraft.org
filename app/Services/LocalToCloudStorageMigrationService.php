@@ -156,8 +156,16 @@ class LocalToCloudStorageMigrationService
         ];
 
         if ($dryRun) {
+            $baseUrl = rtrim((string) config('filesystems.disks.'.$this->remoteDiskName().'.url', ''), '/');
+
             $stats['articles_updated'] = Article::query()
-                ->where('content', 'like', '%/storage/%')
+                ->where(function ($query) use ($baseUrl): void {
+                    $query->where('content', 'like', '%/storage/%');
+
+                    if ($baseUrl !== '') {
+                        $query->orWhere('content', 'like', '%'.$baseUrl.'/%');
+                    }
+                })
                 ->count();
 
             $stats['uploads_updated'] = Upload::query()
@@ -168,11 +176,10 @@ class LocalToCloudStorageMigrationService
         }
 
         Article::query()
-            ->where('content', 'like', '%/storage/%')
             ->orderBy('id')
             ->chunkById(100, function ($articles) use (&$stats): void {
                 foreach ($articles as $article) {
-                    $updatedContent = $this->replaceStorageUrlsInContent($article->content);
+                    $updatedContent = $this->fileStorage->rewriteContentUrls($article->content);
 
                     if ($updatedContent !== $article->content) {
                         $article->update(['content' => $updatedContent]);
@@ -186,58 +193,6 @@ class LocalToCloudStorageMigrationService
             ->update(['storage_disk' => $this->remoteDiskName()]);
 
         return $stats;
-    }
-
-    public function replaceStorageUrlsInContent(?string $content): ?string
-    {
-        if ($content === null || $content === '') {
-            return $content;
-        }
-
-        $appUrl = rtrim((string) config('app.url'), '/');
-        $patterns = [
-            '~'.preg_quote($appUrl, '~').'/storage/([^"<>]+)~',
-            '~/storage/([^"<>]+)~',
-        ];
-
-        foreach ($patterns as $pattern) {
-            $replaced = preg_replace_callback(
-                $pattern,
-                function (array $matches): string {
-                    return $this->remoteUrl(urldecode($matches[1]));
-                },
-                $content
-            );
-
-            if ($replaced !== null) {
-                $content = $replaced;
-            }
-        }
-
-        return $content;
-    }
-
-    protected function remoteUrl(string $path): string
-    {
-        $normalizedPath = ltrim($path, '/');
-        $diskName = $this->remoteDiskName();
-        $diskConfig = config('filesystems.disks.'.$diskName, []);
-        $url = Storage::disk($diskName)->url($normalizedPath);
-
-        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
-            return $url;
-        }
-
-        $baseUrl = rtrim((string) ($diskConfig['url'] ?? ''), '/');
-
-        if ($baseUrl === '') {
-            return $url;
-        }
-
-        $root = trim((string) ($diskConfig['root'] ?? ''), '/');
-        $segments = array_filter([$root, $normalizedPath]);
-
-        return $baseUrl.'/'.implode('/', $segments);
     }
 
     /**
